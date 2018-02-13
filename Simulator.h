@@ -17,7 +17,7 @@ private:
 	double muliplyer = 100;
 	std::mt19937_64 generator;
 	double deltaCoordinate = 0.1;
-	int stepsAmount = 10;
+	int stepsAmount = 10000;
 	double particleDiameter = 1;
 	int particleAmount;
 public:
@@ -34,8 +34,8 @@ public:
 private:
 	void GenerateParticles(int particleAmount);
 	Particle GenerateDeltaState(const Particle particle);
-	double CalculateParticleEnergy(Particle particle);
-	bool CheckParticleForCollisions(Particle particle,int ignored);
+	double CalculateParticleEnergy(const Particle particle);
+	bool CheckParticleForCollisions(const Particle particle,int ignored);
 	static double GenerateRandom(double min, double max, std::mt19937_64 &generator);
 	void SetGeneratotRandomSeed();
 	std::vector<double> GetVectorField(std::vector<double> point, bool mode);

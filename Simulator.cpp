@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include <iostream>
-#include <math.h>
+#include <cmath>
 #include <vector>
 #include <chrono>
 #include <thread>
@@ -16,6 +16,9 @@ using std::endl;
 
 using std::mt19937_64;
 using std::uniform_real_distribution;
+
+
+//TODO: chech if tube size less than D of particle
 
 Simulator::Simulator(
 	double tubeR,
@@ -51,12 +54,16 @@ Simulator::Simulator(
 
 	ChechSystemForErrors();
 }
+
+
 //TODO: found a bug here, it generates bad
 //TODO: make a thing whick checks if tubeR > particle's R
 void Simulator::GenerateParticles(int particleAmount)
 {
 	cout << "Generating " << particleAmount << " particles to " << std::flush;
 	cout << "TubeR: " << tubeR << ". TubeL: " << tubeL << "." << endl;
+
+	//this->particleAmount = particleAmount;
 
 	//Particle tempPart(0, 0, 0, 1, 0, 0);
 	//particles.push_back(tempPart);
@@ -89,6 +96,7 @@ void Simulator::GenerateParticles(int particleAmount)
 	cout << "\nParticles've been generated!" << endl;
 }
 
+
 //
 // IMPORTANT MEMO
 // Here we calculate energy predivided by kT so later we can
@@ -119,6 +127,7 @@ Particle Simulator::GenerateDeltaState(const Particle particle)
 	return newState;
 }
 
+
 //TODO: make iterations
 //TODO: add deltaCoordinate decreasing in future iterations to immprove speed
 void Simulator::MakeIterations(int particleAmount)
@@ -131,29 +140,23 @@ void Simulator::MakeIterations(int particleAmount)
 
 	for (int i = 0; i < stepsAmount; i++)
 	{
-		cout << "STEP #" << i << " Tube: " << tubeR << " " << tubeL << "" << std::endl;
-		//TODO: change endl to flush
+		cout << "STEP #" << i << " Tube: " << tubeR << " " << tubeL << "              \r" << std::flush;
+
 		for (int j = 0; j < particleAmount; j++)
 		{
-			//Particle temp = GenerateDeltaState(particles.at(j));
-			Particle temp(0, 0, 0, 1, 0, 0);
-
-			cout << "temp: " << temp.toString();
+			Particle temp = GenerateDeltaState(particles.at(j));
 
 			if (!CheckParticleForCollisions(temp, j))
 			{
-				cout << " acc1";
-
 				double energy = CalculateParticleEnergy(temp) - CalculateParticleEnergy(particles.at(j));
-				
+
 				if (exp(energy) > GenerateRandom(0, 1, generator))
 				{
-					//particles.at(j) = temp;
-					cout << " acc2";
+					particles.at(j) = temp;
 				}
+
 				averageProjection += particles.at(j).mz;
 			}
-			cout << endl;;
 		}
 	}
 	cout << "\nERRORS: " << particles.at(0).CheckForErrors(tubeR, tubeL) << endl;
@@ -165,7 +168,8 @@ void Simulator::MakeIterations(int particleAmount)
 	ChechSystemForErrors();
 }
 
-double Simulator::CalculateParticleEnergy(Particle particle)
+
+double Simulator::CalculateParticleEnergy(const Particle particle)
 {
 	//here's the field part of energy only!
 	double outerField = MCSim_application::getField();
@@ -189,15 +193,16 @@ double Simulator::CalculateParticleEnergy(Particle particle)
 	return totalEnergy;
 }
 
+
 //TODO: IMPORTANT checking for collisions: /walls /particles
-bool Simulator::CheckParticleForCollisions(Particle particle, int ignored)
+bool Simulator::CheckParticleForCollisions(const Particle particle, int ignored)
 {
 	//w walls
 	double R =
 		particle.x * particle.x +
 		particle.y * particle.y;
 
-	//if ((sqrt(R) + particleDiameter / 2) > tubeR) return true;
+	if ((sqrt(R) + particleDiameter / 2) > tubeR) return true;
 	if (abs(particle.z) + particleDiameter / 2 > tubeL / 2) return true;
 
 	//w parts
@@ -217,11 +222,13 @@ bool Simulator::CheckParticleForCollisions(Particle particle, int ignored)
 	return false;
 }
 
+
 double Simulator::GenerateRandom(double min, double max, mt19937_64 &generator)
 {
 	uniform_real_distribution<double> distr(min, max);
 	return distr(generator);
 }
+
 
 void Simulator::SetGeneratotRandomSeed()
 {
@@ -235,6 +242,7 @@ void Simulator::SetGeneratotRandomSeed()
 	cout << "RANDOM SEED IS: " << seed << " In time: " << timePast << "nsecs." << endl;
 	generator.seed(seed);
 }
+
 
 std::vector<double> Simulator::GetVectorField(std::vector<double> point, bool mode)
 {
@@ -254,6 +262,7 @@ std::vector<double> Simulator::GetVectorField(std::vector<double> point, bool mo
 		return temp;
 	}
 }
+
 
 bool Simulator::ChechSystemForErrors()
 {

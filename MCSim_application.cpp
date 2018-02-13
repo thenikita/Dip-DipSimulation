@@ -89,5 +89,9 @@ void MCSim_application::GenerateTube()
 	double tubeVolume = allParticlesVolume / targetVolumeDensity;
 	// V = pi r^2 * L = pi r^3 * aspect
 	targetTubeR = pow(tubeVolume / PI / aspect, 0.3333333);
+	if (targetTubeR < particleDiameter)
+	{
+		targetTubeR = 0.55 * particleDiameter;
+	}
 	targetTubeL = targetTubeR * aspect;
 }
