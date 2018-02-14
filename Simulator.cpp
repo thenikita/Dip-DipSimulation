@@ -18,8 +18,6 @@ using std::mt19937_64;
 using std::uniform_real_distribution;
 
 
-//TODO: chech if tube size less than D of particle
-
 Simulator::Simulator(
 	double tubeR,
 	double tubeL,
@@ -27,7 +25,7 @@ Simulator::Simulator(
 {
 	cout << "Simulator is launched!" << endl;
 
-	//this->particleAmount = particleAmount;
+	this->particleAmount = 0;
 
 	this->tubeR = tubeR * muliplyer;	// Here we assigned target values of tube to current values.
 	this->tubeL = tubeL * muliplyer;	// Below we will increase this ones because of method of getting
@@ -57,13 +55,10 @@ Simulator::Simulator(
 
 
 //TODO: found a bug here, it generates bad
-//TODO: make a thing whick checks if tubeR > particle's R
 void Simulator::GenerateParticles(int particleAmount)
 {
 	cout << "Generating " << particleAmount << " particles to " << std::flush;
 	cout << "TubeR: " << tubeR << ". TubeL: " << tubeL << "." << endl;
-
-	//this->particleAmount = particleAmount;
 
 	//Particle tempPart(0, 0, 0, 1, 0, 0);
 	//particles.push_back(tempPart);
@@ -148,7 +143,9 @@ void Simulator::MakeIterations(int particleAmount)
 
 			if (!CheckParticleForCollisions(temp, j))
 			{
-				double energy = CalculateParticleEnergy(temp) - CalculateParticleEnergy(particles.at(j));
+				double energy = 
+					CalculateParticleEnergy(temp) - 
+					CalculateParticleEnergy(particles.at(j));
 
 				if (exp(energy) > GenerateRandom(0, 1, generator))
 				{
