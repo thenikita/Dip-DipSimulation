@@ -57,7 +57,7 @@ MCSim_application::MCSim_application()
 
 	showSystem(simulator);
 
-	simulator.MakeIterations(particleAmount);
+	simulator.MakeIterations(particleAmount, true);
 
 	showSystem(simulator);
 

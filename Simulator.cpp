@@ -125,34 +125,57 @@ Particle Simulator::GenerateDeltaState(const Particle particle)
 
 //TODO: make iterations
 //TODO: add deltaCoordinate decreasing in future iterations to immprove speed
-void Simulator::MakeIterations(int particleAmount)
+void Simulator::MakeIterations(int particleAmount, bool ifNeedResize)
 {
 	//this->particleAmount = particleAmount;
 
 	cout << "Iteration process is starting..." << endl;
 
+	bool goOn = true;
+
 	double averageProjection = 0;
+	
+	while (goOn) {
 
-	for (int i = 0; i < stepsAmount; i++)
-	{
-		cout << "STEP #" << i << " Tube: " << tubeR << " " << tubeL << "              \r" << std::flush;
-
-		for (int j = 0; j < particleAmount; j++)
+		for (int i = 0; i < stepsAmount; i++)
 		{
-			Particle temp = GenerateDeltaState(particles.at(j));
+			cout << "STEP #" << i << " Tube: " << tubeR << " " << tubeL << "          \r" << std::flush;
 
-			if (!CheckParticleForCollisions(temp, j))
+			tempL = tubeL;
+			tempR = tubeR;
+
+			for (int j = 0; j < particleAmount; j++)
 			{
-				double energy = 
-					CalculateParticleEnergy(temp) - 
-					CalculateParticleEnergy(particles.at(j));
+				Particle temp = GenerateDeltaState(particles.at(j));
 
-				if (exp(energy) > GenerateRandom(0, 1, generator))
+				if (!CheckParticleForCollisions(temp, j))
 				{
-					particles.at(j) = temp;
-				}
+					double energy =
+						CalculateParticleEnergy(temp) -
+						CalculateParticleEnergy(particles.at(j));
 
-				averageProjection += particles.at(j).mz;
+					if (exp(energy) > GenerateRandom(0, 1, generator))
+					{
+						particles.at(j) = temp;
+
+						if (ifNeedResize)
+						{
+							CollectTubeSizes(j);
+						}
+					}
+
+					averageProjection += particles.at(j).mz;
+				}
+			}
+
+			if (ifNeedResize)
+			{
+				ResizeTube();
+				goOn = CheckIfNeedResize();
+				if (!goOn)
+				{
+					cout << "\nRESIZE FINISHED!!!\n" << endl;
+				}
 			}
 		}
 	}
@@ -286,4 +309,40 @@ bool Simulator::ChechSystemForErrors()
 	}
 	cout << "NO ERRORS" << endl;
 	return false;
+}
+
+
+void Simulator::CollectTubeSizes(int num)
+{
+	double R = sqrt(
+		particles.at(num).x * particles.at(num).x +
+		particles.at(num).y * particles.at(num).y);
+
+	double L = abs(particles.at(num).z) * 2;
+
+	if (R < this->tempR) this->tempR = R;
+	if (L < this->tempL) this->tempL = L;
+}
+
+
+void Simulator::ResizeTube()
+{
+	if (tempL < tubeL) tubeL = tempL;
+	if (tempR < tubeR) tubeR = tempR;
+}
+
+
+bool Simulator::CheckIfNeedResize()
+{
+	double R = MCSim_application::getTargetRadius();
+	double A = MCSim_application::getTubeAspect();
+
+	if ((R > tubeR) && (R * A > tubeL))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 }
