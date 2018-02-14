@@ -5,11 +5,11 @@
   you will have an opportunity to set everything you need up. 
   
 **Current status:**
-- [X] Everything looks working for one particle
+- [X] Working with N particles in constant volume tube with no demagnetisation
 
 **Aiming to:**
-- [ ] Get working for any amount of particles without going in demagnetizing effects (no tube size
-  changes)
+- [ ] Resizing tube to get target volume density
   
 **Things done:**
 - [X] Basic shit
+- [X] Everything looks working for one particle
