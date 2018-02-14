@@ -143,7 +143,9 @@ void Simulator::MakeIterations(int particleAmount)
 
 			if (!CheckParticleForCollisions(temp, j))
 			{
-				double energy = CalculateParticleEnergy(temp) - CalculateParticleEnergy(particles.at(j));
+				double energy = 
+					CalculateParticleEnergy(temp) - 
+					CalculateParticleEnergy(particles.at(j));
 
 				if (exp(energy) > GenerateRandom(0, 1, generator))
 				{

@@ -17,7 +17,7 @@ private:
 	double muliplyer = 100;
 	std::mt19937_64 generator;
 	double deltaCoordinate = 0.1;
-	int stepsAmount = 10000;
+	int stepsAmount = 100000;
 	double particleDiameter = 1;
 	int particleAmount;
 public:
