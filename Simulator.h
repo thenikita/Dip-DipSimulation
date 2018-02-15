@@ -28,6 +28,7 @@ public:
 
 	std::vector<Particle> getParticles() { return particles; }
 	void MakeIterations(int particleAmount, bool ifNeedResize);
+	void MakeResizing();
 
 	double GetTubeR() { return tubeR; }
 	double GetTubeL() { return tubeL; }
@@ -35,14 +36,20 @@ public:
 	double SetTubeR(double R) { this->tubeR = R; }
 	double SetTubeL(double L) { this->tubeL = L; }
 private:
-	void GenerateParticles(int particleAmount);
+	void GenerateParticles(const int particleAmount);
 	Particle GenerateDeltaState(const Particle particle);
-	double CalculateParticleEnergy(const Particle particle);
-	bool CheckParticleForCollisions(const Particle particle,int ignored);
+
+	double CalculateParticleEnergy(const Particle particle, bool mode);
+
+	bool CheckParticleForCollisions(const Particle particle, int ignored);
+
 	static double GenerateRandom(double min, double max, std::mt19937_64 &generator);
 	void SetGeneratotRandomSeed();
+
 	std::vector<double> GetVectorField(std::vector<double> point, bool mode);
+
 	bool ChechSystemForErrors();
+
 	void CollectTubeSizes(int num);
 	void ResizeTube();
 	bool CheckIfNeedResize();
