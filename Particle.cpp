@@ -64,21 +64,23 @@ double Particle::CalculateDipoleEnergy(
 double Particle::CalculateInFieldEnergy(double field)
 {
 	double cos = 0;
-	double lambda = MCSim_application::getLambda();
-	double xi = MCSim_application::getField();
+	double lambda = MCSim_application::GetLambda();
+	double xi = MCSim_application::GetField();
 
 
 	return - field * cos;
 }
 
-double Particle::calculateCosinus(std::vector<double> first, std::vector<double> second)
+/*Calculate Projection function returns projection of the second
+  vector on the first vector's direction*/
+double Particle::CalculateProjection(std::vector<double> first, std::vector<double> second)
 {
 	double scalar = ScalarProduction(first, second);
 	double firstModule = calculateVectorModule(first);
 	double secondmodule = calculateVectorModule(second);
 
 	//cout << scalar << " " << firstModule << " " << secondmodule << endl;
-	return scalar / (firstModule * secondmodule);
+	return scalar / firstModule;
 }
 
 double Particle::calculateVectorModule(std::vector<double> first)

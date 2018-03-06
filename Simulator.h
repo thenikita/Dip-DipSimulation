@@ -20,6 +20,7 @@ private:
 	int stepsAmount = 10;
 	double particleDiameter = 1;
 	int particleAmount;
+
 public:
 	Simulator(
 		double tubeR, 
@@ -35,23 +36,27 @@ public:
 
 	double SetTubeR(double R) { this->tubeR = R; }
 	double SetTubeL(double L) { this->tubeL = L; }
+
+	void ShowSystem();
+
 private:
 	void GenerateParticles(const int particleAmount);
 	Particle GenerateDeltaState(const Particle particle);
 
 	double CalculateParticleEnergy(const Particle particle, bool mode);
+	double CalculateCurrentVolumeDensity();
 
 	bool CheckParticleForCollisions(const Particle particle, int ignored);
 
 	static double GenerateRandom(double min, double max, std::mt19937_64 &generator);
-	void SetGeneratotRandomSeed();
+	void SetGeneratorRandomSeed();
 
 	std::vector<double> GetVectorField(std::vector<double> point, bool mode);
 
-	bool ChechSystemForErrors();
+	bool CheckSystemForErrors();
 
 	void CollectTubeSizes(int num);
-	void ResizeTube();
-	bool CheckIfNeedResize();
+	void ResizeTubeIfPossible();
+	bool CheckIfTubeNeedResize();
 };
 

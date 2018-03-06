@@ -2,6 +2,9 @@
 class Theory
 {
 public:
-	static double CalculateForSingleParticle(double field);
+	static double CalculateMagnetizationForSingleParticle(double field);
+
+	static double CalculateFieldMultiplier();
+	static double CalculateMagnetizationForSystem(double field);
 };
 

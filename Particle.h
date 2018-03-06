@@ -22,7 +22,7 @@ public:
 
 public:
 	std::string toString();
-	static double calculateCosinus(std::vector<double> first, std::vector<double> second);
+	static double CalculateProjection(std::vector<double> first, std::vector<double> second);
 	static double calculateVectorModule(std::vector<double> first);
 	bool CheckForErrors(double R, double L);
 };

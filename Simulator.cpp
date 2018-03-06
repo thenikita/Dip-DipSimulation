@@ -17,6 +17,7 @@ using std::endl;
 using std::mt19937_64;
 using std::uniform_real_distribution;
 
+const double PI = 3.14;
 
 Simulator::Simulator(
 	double tubeR,
@@ -44,17 +45,36 @@ Simulator::Simulator(
 	cout << field.at(0) << ", " << field.at(1) << ", " << field.at(2) << ")" << endl;
 
 	MCSim_application::setField(Particle::calculateVectorModule(field));
-	cout << "Field module: " << MCSim_application::getField() << endl;
+	cout << "Field module: " << MCSim_application::GetField() << endl;
+	cout << "\n********************************************\n";
 
-	SetGeneratotRandomSeed();
+	SetGeneratorRandomSeed();
 
 	GenerateParticles(particleAmount);
 
-	ChechSystemForErrors();
+	CheckSystemForErrors();
 }
 
 
-//TODO: found a bug here, it generates bad
+void Simulator::ShowSystem()
+{
+	cout << "\n################# SYSTEM ###################\n";
+	cout << "Lambda:           " << MCSim_application::GetLambda() << endl;
+	cout << "Field Module:     " << MCSim_application::GetField() << endl;
+	cout << "Target Density:   " << MCSim_application::GetTargetVolumeDensity() << endl;
+	cout << "Current Density:  " << CalculateCurrentVolumeDensity() << endl;
+
+	cout << "Particles:        " << particleAmount << endl;
+	cout << "  N  |            COORDINATES             |            MAGNETIC MOMENT       " << endl;
+
+	for (int i = 0; i < particleAmount; i++)
+	{
+		cout << "  " << i << "    ";
+		cout << particles.at(i).toString() << endl;
+	}
+	cout << "\n################# SYSTEM ###################\n";
+}
+
 void Simulator::GenerateParticles(int particleAmount)
 {
 	cout << "Generating " << particleAmount << " particles to " << std::flush;
@@ -69,7 +89,6 @@ void Simulator::GenerateParticles(int particleAmount)
 		double mx, my, mz;
 		double R = tubeR;
 
-		//TODO: generate more than one particle
 		x = GenerateRandom(-R + 1, R - 1, generator);
 		R = sqrt(R * R - x * x);
 		y = GenerateRandom(-R + 1, R - 1, generator);
@@ -129,56 +148,59 @@ Particle Simulator::GenerateDeltaState(const Particle particle)
 /* Make Iterations function is making iterations moving particles
    inside the tube. Use after resizing the tube to relevant size
    if wanna get results accounting demagnetisation and other shit*/
-//TODO: make iterations
+
 //TODO: add deltaCoordinate decreasing in future iterations to immprove speed
 void Simulator::MakeIterations(int particleAmount, bool ifNeedResize)
 {
 	//this->particleAmount = particleAmount;
 
-	cout << "Iteration process is starting..." << endl;
-
-	//bool goOn = true;
+	cout << "\n****************ITERATIONS******************\n";
+	
 
 	double averageProjection = 0;
 	
-	//TODO: remove this while
-	while (goOn) 
+	//check it
+	for (int i = 0; i < stepsAmount; i++)
 	{
+		cout << 100 * i / stepsAmount << " %  Tube: " << tubeR << " " << tubeL << "   \r" << std::flush;
 
-		for (int i = 0; i < stepsAmount; i++)
+		for (int j = 0; j < particleAmount; j++)
 		{
-			cout << "STEP #" << i << " Tube: " << tubeR << " " << tubeL << "          \r" << std::flush;
+			Particle temp = GenerateDeltaState(particles.at(j));
 
-			//tempL = tubeL;
-			//tempR = tubeR;
-
-			for (int j = 0; j < particleAmount; j++)
+			if (!CheckParticleForCollisions(temp, j))
 			{
-				Particle temp = GenerateDeltaState(particles.at(j));
+				double energy =
+					CalculateParticleEnergy(temp, true) -
+					CalculateParticleEnergy(particles.at(j), true);
 
-				if (!CheckParticleForCollisions(temp, j))
+				if (exp(energy) > GenerateRandom(0, 1, generator))
 				{
-					double energy =
-						CalculateParticleEnergy(temp, true) -
-						CalculateParticleEnergy(particles.at(j), true);
-
-					if (exp(energy) > GenerateRandom(0, 1, generator))
-					{
-						particles.at(j) = temp;
-					}
-
-					averageProjection += particles.at(j).mz;
+					particles.at(j) = temp;
 				}
+
+				averageProjection += particles.at(j).mz;
 			}
 		}
 	}
 
+	cout << "100 %  Tube: " << tubeR << " " << tubeL << "   \r" << std::flush;
 	cout << "\nIterations've finished!" << endl;
 	cout << "Average is: " << averageProjection / stepsAmount / particleAmount << endl;
-	//TODO: add upgraded theory function
-	cout << "Theory is:  " << Theory::CalculateForSingleParticle(MCSim_application::getField()) << endl;
+	
+	cout 
+		<< "Theory for isolated:  " 
+		<< Theory::CalculateMagnetizationForSingleParticle(MCSim_application::GetField()) 
+		<< endl;
 
-	ChechSystemForErrors();
+	cout 
+		<< "Theory for system:    " 
+		<< Theory::CalculateMagnetizationForSystem(MCSim_application::GetField())
+		<< endl;
+
+	CheckSystemForErrors();
+
+	cout << "****************ITERATIONS******************\n";
 }
 
 
@@ -186,16 +208,26 @@ void Simulator::MakeIterations(int particleAmount, bool ifNeedResize)
    volume density be equal to target*/
 void Simulator::MakeResizing()
 {
-	cout << "Resizing process starting..." << endl;
+	cout << "\n*****************RESIZING*******************\n";
 
 	bool goOn = true;
 
-	while (goOn)
+	//TODO: finish the resizing procedure
+	int k = 0;
+	while (k < 2)
 	{
-		cout << "STEP #" << i << std::flush;
+		k++;
 
 		tempR = tubeR;
 		tempL = tubeL;
+
+		cout
+			<< " Tube: "
+			<< tubeR << " "
+			<< tubeL << " "
+			<< " Max: "
+			<< tempR << " "
+			<< tempL << "          \n" << std::flush;
 
 		for (int i = 0; i < particleAmount; i++)
 		{
@@ -214,15 +246,23 @@ void Simulator::MakeResizing()
 				}
 			}
 
-			ResizeTube();
-			goOn = CheckIfNeedResize();
+			ResizeTubeIfPossible();
+			goOn = CheckIfTubeNeedResize();
 		}
 
-		cout << " Tube: " << tubeR << " " << tubeL << "          \r" << std::flush;
+		cout 
+			<< " Tube: " 
+			<< tubeR << " " 
+			<< tubeL << " " 
+			<< " Max: " 
+			<< tempR << " "
+			<< tempL << "          \n\n" << std::flush;
 	}
 
 	cout << "Resize finished! Now will check if there's any errors..." << endl;
-	ChechSystemForErrors();
+	CheckSystemForErrors();
+
+	cout << "\n*****************RESIZING*******************\n";
 }
 
 
@@ -230,31 +270,39 @@ void Simulator::MakeResizing()
    inside the outer magnetic field and in dipole-dipole interaction */
 double Simulator::CalculateParticleEnergy(const Particle particle, bool mode)
 {
-	//here's the field part of energy only!
+	//here's the field part of energy
 	std::vector<double> point;
 	point.push_back(particle.x);
 	point.push_back(particle.y);
 	point.push_back(particle.z);
 
-	double outerField = GetVectorField(point, mode);
+	std::vector<double> outerField = GetVectorField(point, mode);
 
 	std::vector<double> moment;
 	moment.push_back(particle.mx);
 	moment.push_back(particle.my);
 	moment.push_back(particle.mz);
 
-	double cosTheta = Particle::calculateCosinus(moment, field);
+	double outerFieldEnergy = Particle::CalculateProjection(moment, outerField);
 	//cout << "cos: " << cosTheta << endl;
 
-	double outerFieldEnergy = outerField * cosTheta;
-
 	double dipoleInteractionEnergy = 0;
+
+
 	//TODO: calculate dipole interaction energy
 	//Already have dip-dip function in particle obj
 
 	double totalEnergy = dipoleInteractionEnergy + outerFieldEnergy;
 
 	return totalEnergy;
+}
+
+double Simulator::CalculateCurrentVolumeDensity()
+{
+	double particleVolume = particleAmount * 4 / 3 * PI * pow((particleDiameter / 2), 3);
+	double tubeVolume = PI * tubeR * tubeR * tubeL;
+
+	return particleVolume / tubeVolume;
 }
 
 
@@ -298,8 +346,7 @@ double Simulator::GenerateRandom(double min, double max, mt19937_64 &generator)
 
 
 /* Set Random Seed function sets seed for random generator */
-//TODO: fix typo in the func name
-void Simulator::SetGeneratotRandomSeed()
+void Simulator::SetGeneratorRandomSeed()
 {
 	generator.seed(1);
 	std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
@@ -337,8 +384,7 @@ std::vector<double> Simulator::GetVectorField(std::vector<double> point, bool mo
 
 /* Check System For Errors is backup function which checks system
    just one more time for collisions and maybe other errors */
-// TODO: fix typo in func name
-bool Simulator::ChechSystemForErrors()
+bool Simulator::CheckSystemForErrors()
 {
 	cout << "Checking system for errors in " << this->particleAmount << endl;
 	for (int i = 0; i < this->particleAmount; i++)
@@ -381,19 +427,17 @@ void Simulator::CollectTubeSizes(int num)
 }
 
 
-//TODO: rename to 'resize tube if possible'
-void Simulator::ResizeTube()
+void Simulator::ResizeTubeIfPossible()
 {
 	if (tempL < tubeL) tubeL = tempL;
 	if (tempR < tubeR) tubeR = tempR;
 }
 
 
-//TODO: ranme to 'check if tube need resize'
-bool Simulator::CheckIfNeedResize()
+bool Simulator::CheckIfTubeNeedResize()
 {
-	double R = MCSim_application::getTargetRadius();
-	double A = MCSim_application::getTubeAspect();
+	double R = MCSim_application::GetTargetRadius();
+	double A = MCSim_application::GetTubeAspect();
 
 	if ((R > tubeR) && (R * A > tubeL))
 	{
