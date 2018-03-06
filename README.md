@@ -5,11 +5,12 @@
   you will have an opportunity to set everything you need up. 
   
 **Current status:**
-- [X] Everything looks working for one particle
+- [X] Get working for any amount of particles without going in demagnetizing effects (no tube size
+  changes)
 
 **Aiming to:**
-- [ ] Get working for any amount of particles without going in demagnetizing effects (no tube size
-  changes)
+- [ ] Resizing the tube
   
 **Things done:**
 - [X] Basic shit
+- [X] Everything looks working for one particle
