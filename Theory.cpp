@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "Theory.h"
 #include "MCSim_application.h"
 #include <math.h>

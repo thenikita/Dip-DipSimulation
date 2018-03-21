@@ -1,9 +1,7 @@
-#include "stdafx.h"
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 #include "MCSim_application.h"
-#include "Simulator.h"
 
 using std::cin;
 using std::cout;
@@ -34,7 +32,7 @@ double MCSim_application::particleMagneticMoment = 1;
 MCSim_application::MCSim_application()
 {
 	cout << "\n********************************************\n";
-	cout << "You are wellcome to Monte-Carlo Simulation...\n";
+	cout << "You are welcome to Monte-Carlo Simulation...\n";
 	cout << "Initialization of program..." << endl;
 	cout << "\n********************************************\n";
 

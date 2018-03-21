@@ -1,9 +1,7 @@
-#include "stdafx.h"
 #include "Particle.h"
 #include "MCSim_application.h"
-#include "Simulator.h"
 
-#include <math.h>
+#include <cmath>
 #include <vector>
 #include <iostream>
 
