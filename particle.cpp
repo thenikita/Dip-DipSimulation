@@ -2,10 +2,13 @@
 #include "montecarloapplication.h"
 
 #include <iostream>
+#include <cmath>
 
 using std::vector;
 using std::cout;
 using std::endl;
+
+double Particle::d = 0.0;
 
 Particle::Particle(
         double x,
@@ -46,29 +49,32 @@ double Particle::CalculateDipoleInteractionEnergy(
     e2.push_back( second.mx );
     e2.push_back( second.mx );
 
-    double e1r = ScalarProduction( e1, r );
-    double e2r = ScalarProduction( e2, r );
-    double e1e2 = ScalarProduction( e1, e2 );
+    double e1r = ProductScalars( e1, r );
+    double e2r = ProductScalars( e2, r );
+    double e1e2 = ProductScalars( e1, e2 );
 
     return -lambda / ( pow( moduleR / d, 3 )) *
            ( 3 * e1r * e2r / pow( moduleR / d, 2 ) - e1e2 );
 }
 
+// TODO implement calculating energy in the outer field
 double Particle::CalculateInFieldEnergy( double field ) {
     double cos = 0;
-    double lambda = MonteCarloApplication::GetLambda( );
-    double xi = MonteCarloApplication::GetField( );
-
+    //double lambda = MonteCarloApplication::GetLambda( );
+    //double xi = MonteCarloApplication::GetField( );
 
     return -field * cos;
 }
 
 /*Calculate Projection function returns projection of the second
   vector on the first vector's direction*/
-double Particle::CalculateProjection( std::vector<double> first, std::vector<double> second ) {
-    double scalar = ScalarProduction( first, second );
+double Particle::CalculateProjection(
+        std::vector<double> first,
+        std::vector<double> second ) {
+
+    double scalar = ProductScalars( first, second );
     double firstModule = CalculateVectorModule( first );
-    double secondmodule = CalculateVectorModule( second );
+    // double secondmodule = CalculateVectorModule( second );
 
     //cout << scalar << " " << firstModule << " " << secondmodule << endl;
     return scalar / firstModule;
@@ -77,9 +83,8 @@ double Particle::CalculateProjection( std::vector<double> first, std::vector<dou
 double Particle::CalculateVectorModule( std::vector<double> vector ) {
     double sum = 0;
 
-    for ( int i = 0; i < 3; i++ ) {
-        sum += pow( vector.at( i ), 2 );
-        //TODO: check if simpli multiplying will be faster than pow func
+    for ( unsigned i = 0; i < 3; i++ ) {
+        sum += vector.at( i ) * vector.at( i );
     }
     return sqrt( sum );
 }
@@ -107,7 +112,7 @@ bool Particle::CheckForErrors( double R, double L ) {
     return moment > 1;
 }
 
-double Particle::ScalarProduction( vector<double> first, vector<double> second ) {
+double Particle::ProductScalars( vector<double> first, vector<double> second ) {
 
     //cout << "scalar: " << first.at(0) << first.at(1) << first.at(2) << endl;
     return first.at( 0 ) * second.at( 0 )

@@ -19,10 +19,10 @@ private:
     std::mt19937_64 generator;
     double deltaCoordinate = 0.1;
 
-    int stepsAmount = 10;
+    unsigned int stepsAmount = 10;
 
     double particleDiameter;
-    int particleCount;
+    unsigned int particleCount;
     double lambda;
     double fieldModule;
     double targetVolumeDensity;
@@ -59,9 +59,21 @@ public:
 
     double SetTubeL( double L ) { this->tubeLength = L; }
 
+    double getLambda( ) const { return lambda; }
+
+    double getFieldModule( ) const { return fieldModule; }
+
     void ShowSystem( );
 
 private:
+
+    static void GenerateTube( unsigned int particleCount,
+                              double particleDiameter,
+                              double targetVolumeDensity,
+                              double &targetTubeR,
+                              double &targetTubeL,
+                              double aspect );
+
     void GenerateParticles( const int particleCount );
 
     Particle GenerateDeltaState( const Particle particle, bool ifNeedResize );

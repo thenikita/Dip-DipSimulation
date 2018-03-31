@@ -35,13 +35,13 @@ Simulator::Simulator(
     this->targetVolumeDensity = *targetVolumeDensity;
     this->particleMagneticMoment = *particleMagneticMoment;
     this->aspect = *aspect;
-    this->tubeLength = tubeLength;
-    this->tubeRadius = tubeRadius;
+    this->tubeLength = targetTubeR;
+    this->tubeRadius = targetTubeL;
 
-    tubeRadius = tubeRadius * multiplier;
-    tubeLength = tubeLength * multiplier;
+    tempRadius = tubeRadius * multiplier;
+    tempLength = tubeLength * multiplier;
 
-    cout << "Enter the fieldModule (xi) vector (x, y, z): " << endl;
+    cout << "Enter the field (xi) vector (x, y, z): " << endl;
 
     double tempField;
     for ( int i = 0; i < 3; i++ ) {
@@ -57,12 +57,18 @@ Simulator::Simulator(
                                                  << field.at( 2 ) << ")"
                                                                      << endl;
 
-
     cout << "Field module: " << fieldModule << endl;
     cout << "\n*************************************************************\n";
 }
 
 void Simulator::Run( ) {
+    GenerateTube(particleCount,
+                 particleDiameter,
+                 targetVolumeDensity,
+                 tubeRadius,
+                 tubeLength,
+                 aspect);
+
     SetGeneratorRandomSeed( );
 
     GenerateParticles( this->particleCount );
@@ -105,12 +111,15 @@ void Simulator::GenerateParticles( int particleAmount ) {
             << tubeRadius << " x " << tubeLength
             << endl;
 
-    //Particle tempPart(0, 0, 0, 1, 0, 0);
-    //particles.push_back(tempPart);
+    Particle::SetDiameter(particleDiameter);
+    cout << "Particle Diameter is set to "
+            << particleDiameter
+            << endl;
 
+    cout << "Generating particles..." << endl;
+    // TODO fix crash on here (1 particle)
     for ( int i = 0; i < particleAmount; i++ ) {
         double x, y, z;
-        double mx, my, mz;
         double R = tubeRadius;
 
         x = GenerateRandom( -R + 1,
@@ -153,7 +162,9 @@ Particle Simulator::GenerateDeltaState(
         const Particle particle,
         bool ifNeedResize ) {
 
-    double newX, newY, newZ;
+    double newX = 0;
+    double newY = 0;
+    double newZ = 0;
 
     if ( ifNeedResize ) {
 
@@ -235,19 +246,16 @@ Particle Simulator::GenerateDeltaState(
 
 //TODO: add deltaCoordinate decreasing in future iterations to immprove speed
 void Simulator::MakeIterations( int particleAmount ) {
-    //this->particleCount = particleCount;
-
     cout << "\n****************ITERATIONS******************\n";
-
 
     double averageProjection = 0;
 
     //check it
-    for ( int i = 0; i < stepsAmount; i++ ) {
+    for ( unsigned i = 0; i < stepsAmount; i++ ) {
         cout << 100 * i / stepsAmount << " %  Tube: " << tubeRadius << " " << tubeLength << "   \r"
              << std::flush;
 
-        for ( int j = 0; j < particleAmount; j++ ) {
+        for ( unsigned j = 0; j < particleAmount; j++ ) {
             Particle temp = GenerateDeltaState( particles.at( j ), false );
 
             if ( !CheckParticleForCollisions( temp, j )) {
@@ -264,18 +272,25 @@ void Simulator::MakeIterations( int particleAmount ) {
         }
     }
 
-    cout << "100 %  Tube: " << tubeRadius << " " << tubeLength << "   \r" << std::flush;
-    cout << "\nIterations've finished!" << endl;
-    cout << "Average is: " << averageProjection / stepsAmount / particleAmount << endl;
-
     cout
+            << "100 %  Tube: " << tubeRadius << " "
+            << tubeLength << "   \r"
+
+            << "\nIterations've finished!" << endl
+
+            << "Average is:           "
+            << averageProjection / stepsAmount / particleAmount
+            << endl
+
             << "Theory for isolated:  "
-            << Theory::CalculateMagnetizationForSingleParticle( MonteCarloApplication::GetField( ))
-            << endl;
+            << Theory::CalculateMagnetizationForSingleParticle( fieldModule )
+            << endl
 
-    cout
             << "Theory for system:    "
-            << Theory::CalculateMagnetizationForSystem( MonteCarloApplication::GetField( ))
+            << Theory::CalculateMagnetizationForSystem( lambda,
+                                                        fieldModule,
+                                                        particleMagneticMoment,
+                                                        targetVolumeDensity )
             << endl;
 
     CheckSystemForErrors( );
@@ -284,7 +299,7 @@ void Simulator::MakeIterations( int particleAmount ) {
 }
 
 
-/* Make Resuzing function performs resizing of the tube to get particles'
+/* Make Resizing function performs resizing of the tube to get particles'
    volume density be equal to target*/
 void Simulator::MakeResizing( ) {
     cout << "\n*****************RESIZING*******************\n";
@@ -307,7 +322,7 @@ void Simulator::MakeResizing( ) {
 
         goOn = CheckIfTubeNeedResize( );
 
-        for ( int j = 0; j < particleCount; j++ ) {
+        for ( unsigned j = 0; j < particleCount; j++ ) {
             Particle temp = GenerateDeltaState( particles.at( j ), goOn );
 
             if ( !CheckParticleForCollisions( temp, j )) {
@@ -364,7 +379,10 @@ void Simulator::MakeResizing( ) {
 
 /* Calculate Particle Energy function calculates energy of particles 
    inside the outer magnetic fieldModule and in dipole-dipole interaction */
-double Simulator::CalculateParticleEnergy( const Particle particle, bool mode ) {
+double Simulator::CalculateParticleEnergy(
+        const Particle particle,
+        bool mode ) {
+
     //here's the fieldModule part of energy
     std::vector<double> point;
     point.push_back( particle.x );
@@ -378,8 +396,8 @@ double Simulator::CalculateParticleEnergy( const Particle particle, bool mode ) 
     moment.push_back( particle.my );
     moment.push_back( particle.mz );
 
-    double outerFieldEnergy = Particle::CalculateProjection( moment, outerField );
-    //cout << "cos: " << cosTheta << endl;
+    double outerFieldEnergy =
+            Particle::CalculateProjection( moment, outerField );
 
     double dipoleInteractionEnergy = 0;
 
@@ -393,7 +411,12 @@ double Simulator::CalculateParticleEnergy( const Particle particle, bool mode ) 
 }
 
 double Simulator::CalculateCurrentVolumeDensity( ) {
-    double particleVolume = particleCount * 4 / 3 * PI * pow(( particleDiameter / 2 ), 3 );
+    double particleVolume =
+            double(particleCount) *
+            4 / 3 *
+            PI *
+            pow(( particleDiameter / 2 ), 3 );
+
     double tubeVolume = PI * tubeRadius * tubeRadius * tubeLength;
 
     return particleVolume / tubeVolume;
@@ -410,10 +433,10 @@ bool Simulator::CheckParticleForCollisions( const Particle particle, int ignored
             particle.y * particle.y;
 
     if (( sqrt( R ) + particleDiameter / 2 ) > tubeRadius ) return true;
-    if ( abs( particle.z ) + particleDiameter / 2 > tubeLength / 2 ) return true;
+    if ( fabs( particle.z ) + particleDiameter / 2 > tubeLength / 2 ) return true;
 
     //w parts
-    for ( int i = 0; i < this->particleCount; i++ ) {
+    for ( unsigned i = 0; i < this->particleCount; i++ ) {
         if (( i != ignored )) {
             double distance =
                     ( particles.at( i ).x - particle.x ) * ( particles.at( i ).x - particle.x ) +
@@ -466,7 +489,7 @@ void Simulator::SetGeneratorRandomSeed( ) {
 std::vector<double> Simulator::GetVectorField( std::vector<double> point, bool mode ) {
     // true = normal to z oriented fieldModule
     // false = center oriented fieldModule
-    if ( mode == true ) {
+    if ( mode ) {
         return field;
     } else {
         std::vector<double> temp;
@@ -483,9 +506,9 @@ std::vector<double> Simulator::GetVectorField( std::vector<double> point, bool m
    just one more time for collisions and maybe other errors */
 bool Simulator::CheckSystemForErrors( ) {
     cout << "Checking system for errors in " << this->particleCount << endl;
-    for ( int i = 0; i < this->particleCount; i++ ) {
+    for ( unsigned i = 0; i < this->particleCount; i++ ) {
         //cout << i << std::flush;
-        for ( int j = i + 1; j < this->particleCount; j++ ) {
+        for ( unsigned j = i + 1; j < this->particleCount; j++ ) {
             //cout << j << std::flush;
 
             double distance =
@@ -525,13 +548,41 @@ void Simulator::ResizeTubeIfPossible( ) {
 }
 
 
+// TODO not sure need resize checker works correct
 bool Simulator::CheckIfTubeNeedResize( ) {
-    double R = MonteCarloApplication::GetTargetRadius( );
-    double A = MonteCarloApplication::GetTubeAspect( );
+    double R = tempRadius;
+    double A = aspect;
 
-    if (( R > tubeRadius ) && ( R * A > tubeLength )) {
-        return false;
-    } else {
-        return true;
+    return !(( R > tubeRadius ) && ( R * A > tubeLength ));
+}
+
+void Simulator::GenerateTube(
+        unsigned int particleCount,
+        double particleDiameter,
+        double targetVolumeDensity,
+        double &targetTubeR,
+        double &targetTubeL,
+        double aspect ) {
+
+    cout << "\n*************************************************************\n";
+    cout << "Now going to generate tube..." << endl;
+
+    // N * 4/3 pi r^3
+    double allParticlesVolume =
+            particleCount * 4.0 / 3.0 * PI * pow( particleDiameter, 3 ) / 8.0;
+    double tubeVolume = allParticlesVolume / targetVolumeDensity;
+
+    // V = pi r^2 * L = pi r^3 * aspect
+    targetTubeR = pow( tubeVolume / PI / aspect, 0.3333333 );
+
+    if ( targetTubeR < particleDiameter ) {
+        targetTubeR = 0.55 * particleDiameter;
     }
+
+    targetTubeL = targetTubeR * aspect;
+
+    cout    << "New generated tube: "
+            << "R = " << targetTubeR
+            << " and L = " << targetTubeL
+            << endl;
 }

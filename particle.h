@@ -7,6 +7,11 @@
 
 class Particle {
 public:
+    double x, y, z;
+    double mx, my, mz;
+    static double d;
+
+public:
     Particle( double x,
               double y,
               double z,
@@ -20,15 +25,9 @@ public:
 
     static double CalculateInFieldEnergy( double field );
 
-    static double ScalarProduction( std::vector<double> first,
-                                    std::vector<double> second );
+    static double ProductScalars( std::vector<double> first,
+                                  std::vector<double> second );
 
-public:
-    double x, y, z;
-    double mx, my, mz;
-    double d;
-
-public:
     std::string Show( );
 
     static double CalculateProjection( std::vector<double> first,
@@ -37,4 +36,6 @@ public:
     static double CalculateVectorModule( std::vector<double> vector );
 
     bool CheckForErrors( double R, double L );
+
+    static void SetDiameter( double diameter ) { d = diameter; }
 };

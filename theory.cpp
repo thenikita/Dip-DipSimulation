@@ -1,29 +1,38 @@
 #include "theory.h"
-#include "montecarloapplication.h"
-#include <math.h>
+#include <cmath>
 
 double Theory::CalculateMagnetizationForSingleParticle( double field ) {
     return 1 / tanh( field ) - 1 / field;
 }
 
-double Theory::CalculateFieldMultiplier( ) {
-    double l = MonteCarloApplication::GetLambda( );
-    double p = MonteCarloApplication::GetTargetVolumeDensity( );
-    double m = MonteCarloApplication::GetParticleMagneticMoment( );
+double Theory::CalculateFieldMultiplier(
+        double lambda,
+        double volumeDensity,
+        double magneticMoment) {
 
-    return 4 * l * p / m;
+    return  4 * lambda * volumeDensity / magneticMoment;
 }
 
-double Theory::CalculateMagnetizationForSystem( double field ) {
-    double m = MonteCarloApplication::GetParticleMagneticMoment( );
-    double n = MonteCarloApplication::GetTargetVolumeDensity( );
+double Theory::CalculateMagnetizationForSystem(
+        double lambda,
+        double field,
+        double magneticMoment,
+        double volumeDensity) {
+
     double M =
             CalculateMagnetizationForSingleParticle( field )
-            * m
-            * n;
+            * magneticMoment
+            * volumeDensity;
 
-    double H = field / CalculateFieldMultiplier( );
+    double H = field /
+               CalculateFieldMultiplier(
+                       lambda,
+                       volumeDensity,
+                       magneticMoment );
+
     double effectiveM = H + M / 3;
 
-    return m * n * CalculateMagnetizationForSingleParticle( effectiveM );
+    return magneticMoment *
+           volumeDensity *
+           CalculateMagnetizationForSingleParticle( effectiveM );
 }

@@ -2,22 +2,11 @@
 #include <cmath>
 
 #include "montecarloapplication.h"
+#include "simulator.h"
 
 using std::cin;
 using std::cout;
 using std::endl;
-
-/*
-double MonteCarloApplication::lambda = 1;
-double MonteCarloApplication::fieldModule = 0;
-double MonteCarloApplication::targetVolumeDensity = 0.4;
-int MonteCarloApplication::particleCount = 1;
-double MonteCarloApplication::targetTubeL = 0;
-double MonteCarloApplication::targetTubeR = 0;
-double MonteCarloApplication::aspect = 20;
-double MonteCarloApplication::particleDiameter = 1;
-double MonteCarloApplication::particleMagneticMoment = 1;
-*/
 
 //
 // IMPORTANT MEMO
@@ -74,14 +63,6 @@ MonteCarloApplication::MonteCarloApplication( ) {
     }
 
 void MonteCarloApplication::Run( ) {
-
-    GenerateTube(particleCount,
-                 particleDiameter,
-                 targetVolumeDensity,
-                 targetTubeR,
-                 targetTubeL,
-                 aspect);
-
     auto *simulator = new Simulator( &lambda,
                                      &targetVolumeDensity,
                                      &particleMagneticMoment,
@@ -97,53 +78,3 @@ void MonteCarloApplication::Run( ) {
 }
 
 const double PI = 3.14159;
-
-void MonteCarloApplication::Show( Simulator simulator ) {
-    cout << "\n######################### SYSTEM ###########################\n";
-    cout << "Lambda:           " << lambda << endl;
-    cout << "Field Module:     " << fieldModule << endl;
-    cout << "Density:          " << targetVolumeDensity << endl;
-
-    cout << "Particles:        " << particleCount << endl;
-    cout << "  N  |"
-            "            COORDINATES             |"
-            "            MAGNETIC MOMENT       "
-         << endl;
-
-    for ( int i = 0; i < particleCount; i++ ) {
-        cout << "  " << i << "    ";
-        cout << simulator.getParticles( ).at( i ).Show( ) << endl;
-    }
-    cout << "\n######################### SYSTEM ###########################\n";
-}
-
-void MonteCarloApplication::GenerateTube(
-        unsigned int particleCount,
-        double particleDiameter,
-        double targetVolumeDensity,
-        double &targetTubeR,
-        double &targetTubeL,
-        double aspect ) {
-
-    cout << "\n*************************************************************\n";
-    cout << "Now going to generate tube..." << endl;
-
-    // N * 4/3 pi r^3
-    double allParticlesVolume =
-            particleCount * 4.0 / 3.0 * PI * pow( particleDiameter, 3 ) / 8.0;
-    double tubeVolume = allParticlesVolume / targetVolumeDensity;
-
-    // V = pi r^2 * L = pi r^3 * aspect
-    targetTubeR = pow( tubeVolume / PI / aspect, 0.3333333 );
-
-    if ( targetTubeR < particleDiameter ) {
-        targetTubeR = 0.55 * particleDiameter;
-    }
-
-    targetTubeL = targetTubeR * aspect;
-
-    cout    << "New generated tube: "
-            << "R = " << targetTubeR
-            << " and L = " << targetTubeL
-            << endl;
-}
