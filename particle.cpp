@@ -120,7 +120,7 @@ double Particle::ProductScalars( vector<double> first, vector<double> second ) {
            + first.at( 2 ) * second.at( 2 );
 }
 
-std::string Particle::Show( ) {
+std::string Particle::ToString( ) {
     return "[" + std::to_string( this->x )
            + ", " + std::to_string( this->y )
            + ", " + std::to_string( this->z ) + "]"

@@ -100,12 +100,12 @@ void Simulator::ShowSystem( ) {
 
     for ( unsigned i = 0; i < particleCount; i++ ) {
         cout << "  " << i << "    ";
-        cout << particles.at( i ).Show( ) << endl;
+        cout << particles.at( i ).ToString( ) << endl;
     }
     cout << "\n################# SYSTEM ###################\n";
 }
 
-void Simulator::GenerateParticles( int particleAmount ) {
+void Simulator::GenerateParticles( const int particleAmount ) {
     cout    << "Generating "
             << particleAmount << " particles to tube: "
             << tubeRadius << " x " << tubeLength
@@ -426,7 +426,10 @@ double Simulator::CalculateCurrentVolumeDensity( ) {
 /* Check For Collisions function checks if particle is collided with
    one of unignored particles or walls */
 //TODO: IMPORTANT checking for collisions: /walls /particles
-bool Simulator::CheckParticleForCollisions( const Particle particle, int ignored ) {
+bool Simulator::CheckParticleForCollisions(
+        const Particle particle,
+        int ignored ) {
+
     //w walls
     double R =
             particle.x * particle.x +

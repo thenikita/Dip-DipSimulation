@@ -45,7 +45,7 @@ public:
 
     void Run();
 
-    std::vector<Particle> getParticles( ) { return particles; }
+    std::vector<Particle> GetParticles( ) { return particles; }
 
     void MakeIterations( int particleAmount);
 
@@ -66,29 +66,34 @@ public:
     void ShowSystem( );
 
 private:
+    static void GenerateTube(
+            unsigned int particleCount,
+            double particleDiameter,
+            double targetVolumeDensity,
+            double &targetTubeR,
+            double &targetTubeL,
+            double aspect );
 
-    static void GenerateTube( unsigned int particleCount,
-                              double particleDiameter,
-                              double targetVolumeDensity,
-                              double &targetTubeR,
-                              double &targetTubeL,
-                              double aspect );
+    void GenerateParticles( int particleCount );
 
-    void GenerateParticles( const int particleCount );
+    Particle GenerateDeltaState( Particle particle, bool ifNeedResize );
 
-    Particle GenerateDeltaState( const Particle particle, bool ifNeedResize );
-
-    double CalculateParticleEnergy( const Particle particle, bool mode );
+    double CalculateParticleEnergy( Particle particle, bool mode );
 
     double CalculateCurrentVolumeDensity( );
 
-    bool CheckParticleForCollisions( const Particle particle, int ignored );
+    bool CheckParticleForCollisions( Particle particle, int ignored );
 
-    static double GenerateRandom( double min, double max, std::mt19937_64 &generator );
+    static double GenerateRandom(
+            double min,
+            double max,
+            std::mt19937_64 &generator );
 
     void SetGeneratorRandomSeed( );
 
-    std::vector<double> GetVectorField( std::vector<double> point, bool mode );
+    std::vector<double> GetVectorField(
+            std::vector<double> point,
+            bool mode );
 
     bool CheckSystemForErrors( );
 

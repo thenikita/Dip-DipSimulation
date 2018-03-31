@@ -19,19 +19,22 @@ public:
               double my,
               double mz );
 
-    static double CalculateDipoleInteractionEnergy( double lambda,
-                                                    Particle first,
-                                                    Particle second );
+    static double CalculateDipoleInteractionEnergy(
+            double lambda,
+            Particle first,
+            Particle second );
 
     static double CalculateInFieldEnergy( double field );
 
-    static double ProductScalars( std::vector<double> first,
-                                  std::vector<double> second );
+    static double ProductScalars(
+            std::vector<double> first,
+            std::vector<double> second );
 
-    std::string Show( );
+    std::string ToString( );
 
-    static double CalculateProjection( std::vector<double> first,
-                                       std::vector<double> second );
+    static double CalculateProjection(
+            std::vector<double> first,
+            std::vector<double> second );
 
     static double CalculateVectorModule( std::vector<double> vector );
 
