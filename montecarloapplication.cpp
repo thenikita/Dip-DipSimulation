@@ -12,8 +12,10 @@ using std::endl;
 // IMPORTANT MEMO
 // Do not forget that everything is normed to particles' 
 // diameter which is 1, so all skalar operations
-// should be calculated wuth this remark!
+// should be calculated with this remark!
 //
+
+// TODO include particle diameter to calculations
 
 //
 // IMPORTANT MEMO
@@ -72,6 +74,7 @@ void MonteCarloApplication::Run( ) {
                                      targetTubeR,
                                      targetTubeL );
 
+    // In future here can be more than one thread of simulations
     simulator->Run();
 
     system( "pause" );

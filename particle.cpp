@@ -1,5 +1,4 @@
 #include "particle.h"
-#include "montecarloapplication.h"
 
 #include <iostream>
 #include <cmath>
@@ -8,7 +7,7 @@ using std::vector;
 using std::cout;
 using std::endl;
 
-double Particle::d = 0.0;
+double Particle::d = 0.1;
 
 Particle::Particle(
         double x,
@@ -17,6 +16,7 @@ Particle::Particle(
         double mx,
         double my,
         double mz ) {
+
     this->x = x;
     this->y = y;
     this->z = z;
@@ -28,9 +28,11 @@ Particle::Particle(
 
 double Particle::CalculateDipoleInteractionEnergy(
         double lambda,
+        double diameter,
         Particle first,
         Particle second ) {
-    double d = 1;
+
+    double d = diameter;
 
     double moduleR = sqrt( pow( first.x - second.x, 2 )
                            + pow( first.y - second.y, 2 )
@@ -57,11 +59,15 @@ double Particle::CalculateDipoleInteractionEnergy(
            ( 3 * e1r * e2r / pow( moduleR / d, 2 ) - e1e2 );
 }
 
-// TODO implement calculating energy in the outer field
-double Particle::CalculateInFieldEnergy( double field ) {
-    double cos = 0;
-    //double lambda = MonteCarloApplication::GetLambda( );
-    //double xi = MonteCarloApplication::GetField( );
+double Particle::CalculateInFieldEnergy(
+        double field,
+        std::vector<double> first,
+        std::vector<double> second ) {
+
+    double cos =
+            ProductScalars( first, second ) /
+            CalculateVectorModule( first ) /
+            CalculateVectorModule( second );
 
     return -field * cos;
 }

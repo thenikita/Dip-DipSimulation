@@ -23,6 +23,7 @@ private:
 
     double particleDiameter;
     unsigned int particleCount;
+    unsigned int currentParticles;
     double lambda;
     double fieldModule;
     double targetVolumeDensity;
@@ -97,7 +98,7 @@ private:
 
     bool CheckSystemForErrors( );
 
-    void CollectTubeSizes( int num );
+    void CollectTubeSizes( unsigned num );
 
     void ResizeTubeIfPossible( );
 

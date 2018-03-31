@@ -21,10 +21,14 @@ public:
 
     static double CalculateDipoleInteractionEnergy(
             double lambda,
+            double diameter,
             Particle first,
             Particle second );
 
-    static double CalculateInFieldEnergy( double field );
+    static double CalculateInFieldEnergy(
+            double field,
+            std::vector<double> first,
+            std::vector<double> second );
 
     static double ProductScalars(
             std::vector<double> first,

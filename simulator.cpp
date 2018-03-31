@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "simulator.h"
-#include "montecarloapplication.h"
 #include "theory.h"
 
 using std::cin;
@@ -105,20 +104,14 @@ void Simulator::ShowSystem( ) {
     cout << "\n################# SYSTEM ###################\n";
 }
 
-void Simulator::GenerateParticles( const int particleAmount ) {
+void Simulator::GenerateParticles( const int particleCount ) {
     cout    << "Generating "
-            << particleAmount << " particles to tube: "
+            << particleCount << " particles to tube: "
             << tubeRadius << " x " << tubeLength
             << endl;
 
-    Particle::SetDiameter(particleDiameter);
-    cout << "Particle Diameter is set to "
-            << particleDiameter
-            << endl;
-
     cout << "Generating particles..." << endl;
-    // TODO fix crash on here (1 particle)
-    for ( int i = 0; i < particleAmount; i++ ) {
+    for ( unsigned i = 0; i < particleCount; i++ ) {
         double x, y, z;
         double R = tubeRadius;
 
@@ -137,7 +130,7 @@ void Simulator::GenerateParticles( const int particleAmount ) {
 
         Particle temp( x, y, z, 1, 0, 0 );
         if ( !CheckParticleForCollisions( temp, -1 )) {
-            this->particleCount++;
+            this->currentParticles++;
             particles.push_back( temp );
 
             cout << "Particles ready: " << i + 1 << "\r" << std::flush;
@@ -337,37 +330,6 @@ void Simulator::MakeResizing( ) {
         }
 
         ResizeTubeIfPossible( );
-
-        /*
-        k++;
-
-        cout
-            << " Tube: "
-            << tubeRadius << " "
-            << tubeLength << " "
-            << " Max: "
-            << tempRadius << " "
-            << tempLength << "          \n" << std::flush;
-
-        for (int i = 0; i < particleCount; i++)
-        {
-            Particle temp = GenerateDeltaState(particles.at(i));
-
-            if (!CheckParticleForCollisions(temp, i))
-            {
-                double energy =
-                    CalculateParticleEnergy(temp, false) -
-                    CalculateParticleEnergy(particles.at(i), false);
-
-                if (exp(energy) > GenerateRandom(0, 1, generator))
-                {
-                    particles.at(i) = temp;
-                    CollectTubeSizes(i);
-                }
-            }
-
-        }
-*/
     }
 
     cout << "Resize finished! Now will check if there's any errors..." << endl;
@@ -435,16 +397,24 @@ bool Simulator::CheckParticleForCollisions(
             particle.x * particle.x +
             particle.y * particle.y;
 
-    if (( sqrt( R ) + particleDiameter / 2 ) > tubeRadius ) return true;
-    if ( fabs( particle.z ) + particleDiameter / 2 > tubeLength / 2 ) return true;
+    if (( sqrt( R ) + particleDiameter / 2 ) > tubeRadius )
+        return true;
+
+    if ( fabs( particle.z ) + particleDiameter / 2 > tubeLength / 2 )
+        return true;
 
     //w parts
-    for ( unsigned i = 0; i < this->particleCount; i++ ) {
+    for ( unsigned i = 0; i < this->currentParticles; i++ ) {
         if (( i != ignored )) {
             double distance =
-                    ( particles.at( i ).x - particle.x ) * ( particles.at( i ).x - particle.x ) +
-                    ( particles.at( i ).y - particle.y ) * ( particles.at( i ).y - particle.y ) +
-                    ( particles.at( i ).z - particle.z ) * ( particles.at( i ).z - particle.z );
+                    ( particles.at( i ).x - particle.x ) *
+                    ( particles.at( i ).x - particle.x ) +
+
+                    ( particles.at( i ).y - particle.y ) *
+                    ( particles.at( i ).y - particle.y ) +
+
+                    ( particles.at( i ).z - particle.z ) *
+                    ( particles.at( i ).z - particle.z );
 
             if ( distance < particleDiameter * particleDiameter ) return true;
         }
@@ -533,12 +503,12 @@ bool Simulator::CheckSystemForErrors( ) {
 
 /* Collect Tube Sizes function checks if it's possible to remember
    new smallest tube's parameters */
-void Simulator::CollectTubeSizes( int num ) {
+void Simulator::CollectTubeSizes( unsigned num ) {
     double R = sqrt(
             particles.at( num ).x * particles.at( num ).x +
             particles.at( num ).y * particles.at( num ).y );
 
-    double L = abs( particles.at( num ).z ) * 2;
+    double L = fabs( particles.at( num ).z ) * 2;
 
     if ( R < this->tempRadius ) this->tempRadius = R;
     if ( L < this->tempLength ) this->tempLength = L;
@@ -569,6 +539,11 @@ void Simulator::GenerateTube(
 
     cout << "\n*************************************************************\n";
     cout << "Now going to generate tube..." << endl;
+
+    Particle::SetDiameter(particleDiameter);
+    cout << "Particle Diameter is set to "
+         << particleDiameter
+         << endl;
 
     // N * 4/3 pi r^3
     double allParticlesVolume =
