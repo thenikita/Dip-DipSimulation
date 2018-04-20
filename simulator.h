@@ -15,7 +15,7 @@ private:
     std::vector<Particle> particles;
     std::vector<double> field;
 
-    double multiplier = 100;
+    double multiplier = 1000;
     std::mt19937_64 generator;
     double deltaCoordinate = 0.1;
 
@@ -40,9 +40,7 @@ public:
             double *particleMagneticMoment,
             unsigned int *particleCount,
             double *particleDiameter,
-            double *aspect,
-            double &targetTubeR,
-            double &targetTubeL );
+            double *aspect );
 
     void Run();
 
@@ -71,13 +69,19 @@ private:
             unsigned int particleCount,
             double particleDiameter,
             double targetVolumeDensity,
-            double &targetTubeR,
-            double &targetTubeL,
+            double &tubeRadius,
+            double &tubeLength,
             double aspect );
 
     void GenerateParticles( int particleCount );
 
-    Particle GenerateDeltaState( Particle particle, bool ifNeedResize );
+    Particle GenerateDeltaState( Particle particle,
+                                 double minX = -1.0,
+                                 double maxX = 1.0,
+                                 double minY = -1.0,
+                                 double maxY = 1.0,
+                                 double minZ = -1.0,
+                                 double maxZ = 1.0 );
 
     double CalculateParticleEnergy( Particle particle, bool mode );
 
@@ -100,8 +104,11 @@ private:
 
     void CollectTubeSizes( unsigned num );
 
-    void ResizeTubeIfPossible( );
+    void ResizeTubeIfPossible( bool resizeR,
+                               bool resizeL );
 
     bool CheckIfTubeNeedResize( );
+
+    void SetStartingTubeSize( );
 
 };

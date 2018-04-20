@@ -9,6 +9,7 @@ private:
 
     unsigned int particleCount;
     double particleDiameter;
+    double particleMass;
     double aspect;
     double targetTubeR, targetTubeL;
 

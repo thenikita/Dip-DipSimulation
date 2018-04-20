@@ -15,7 +15,7 @@ using std::endl;
 // should be calculated with this remark!
 //
 
-// TODO include particle diameter to calculations
+// TODO include particle diameter and mass to calculations
 
 //
 // IMPORTANT MEMO
@@ -31,6 +31,8 @@ MonteCarloApplication::MonteCarloApplication( ) {
     this->targetTubeR = 0;
     this->aspect = 20;
     this->particleDiameter = 1;
+    // TODO add particle mass
+    this->particleMass = 1;
     this->particleMagneticMoment = 1;
 
     cout << "\n*************************************************************\n";
@@ -70,14 +72,12 @@ void MonteCarloApplication::Run( ) {
                                      &particleMagneticMoment,
                                      &particleCount,
                                      &particleDiameter,
-                                     &aspect,
-                                     targetTubeR,
-                                     targetTubeL );
+                                     &aspect );
 
     // In future here can be more than one thread of simulations
     simulator->Run();
 
-    system( "pause" );
+    //system( "pause" );
 }
 
 const double PI = 3.14159;

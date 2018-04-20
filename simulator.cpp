@@ -10,6 +10,7 @@
 using std::cin;
 using std::cout;
 using std::endl;
+using std::flush;
 
 using std::mt19937_64;
 using std::uniform_real_distribution;
@@ -22,9 +23,7 @@ Simulator::Simulator(
         double *particleMagneticMoment,
         unsigned int *particleCount,
         double *particleDiameter,
-        double *aspect,
-        double &targetTubeR,
-        double &targetTubeL ) {
+        double *aspect ) {
 
     cout << "Simulator is launched!" << endl;
 
@@ -34,11 +33,6 @@ Simulator::Simulator(
     this->targetVolumeDensity = *targetVolumeDensity;
     this->particleMagneticMoment = *particleMagneticMoment;
     this->aspect = *aspect;
-    this->tubeLength = targetTubeR;
-    this->tubeRadius = targetTubeL;
-
-    tempRadius = tubeRadius * multiplier;
-    tempLength = tubeLength * multiplier;
 
     cout << "Enter the field (xi) vector (x, y, z): " << endl;
 
@@ -78,9 +72,11 @@ void Simulator::Run( ) {
 
     MakeResizing();
 
+    ShowSystem();
+
     //MakeIterations(particleCount);
 
-    ShowSystem();
+    //ShowSystem();
 }
 
 
@@ -90,6 +86,9 @@ void Simulator::ShowSystem( ) {
     cout << "Field Module:     " << this->fieldModule << endl;
     cout << "Target Density:   " << this->targetVolumeDensity << endl;
     cout << "Current Density:  " << CalculateCurrentVolumeDensity( ) << endl;
+
+    cout << "Current Length:   " << this->tempLength << endl;
+    cout << "Current Radius:   " << this->tempRadius << endl;
 
     cout << "Particles:        " << particleCount << endl;
     cout << "  N  |"
@@ -105,37 +104,64 @@ void Simulator::ShowSystem( ) {
 }
 
 void Simulator::GenerateParticles( const int particleCount ) {
+    // increasing tube size to generate particles in it
+    tempRadius = tubeRadius * multiplier;
+    tempLength = tubeLength * multiplier;
+
+    double R = tempRadius;
+    double L = tempLength;
+    double d = particleDiameter;
+
+    int tries = 1;
+
     cout    << "Generating "
             << particleCount << " particles to tube: "
-            << tubeRadius << " x " << tubeLength
+            << R << " x " << L
+            << " with d: " << d
             << endl;
 
-    cout << "Generating particles..." << endl;
     for ( unsigned i = 0; i < particleCount; i++ ) {
         double x, y, z;
-        double R = tubeRadius;
 
-        x = GenerateRandom( -R + 1,
-                            R - 1,
+        x = GenerateRandom( -R + d/2,
+                            R - d/2,
                             generator );
 
         R = sqrt( R * R - x * x );
-        y = GenerateRandom( -R + 1,
-                            R - 1,
+        y = GenerateRandom( -R + d/2,
+                            R - d/2,
                             generator );
 
-        z = GenerateRandom( -tubeLength / 2 + 1,
-                            tubeLength / 2 - 1,
+        z = GenerateRandom( -L / 2.0 + d/2,
+                            L / 2.0 - d/2,
                             generator );
 
+
+        cout << x << " " << y << " " << z << endl;
         Particle temp( x, y, z, 1, 0, 0 );
         if ( !CheckParticleForCollisions( temp, -1 )) {
             this->currentParticles++;
             particles.push_back( temp );
 
-            cout << "Particles ready: " << i + 1 << "\r" << std::flush;
+            cout
+                 << "Particles ready: "
+                 << i + 1 << " in " << tries
+                 << particles[i].ToString()
+                 << "\n" << std::flush;
 
-        } else { i--; }
+            tries = 1;
+
+        } else {
+            i--;
+            tries++;
+            if (tries % 1000 == 0) {
+
+                cout
+                     << "Particles ready: "
+                     << i << " in " << tries
+                     << "\r" << std::flush;
+            }
+        }
     }
 
     cout << "\nParticles've been generated!" << endl;
@@ -153,66 +179,29 @@ void Simulator::GenerateParticles( const int particleCount ) {
 
 Particle Simulator::GenerateDeltaState(
         const Particle particle,
-        bool ifNeedResize ) {
+        double minX,
+        double maxX,
+        double minY,
+        double maxY,
+        double minZ,
+        double maxZ) {
 
     double newX = 0;
     double newY = 0;
     double newZ = 0;
 
-    if ( ifNeedResize ) {
+    newX = particle.x +
+           GenerateRandom( minX, maxX, generator ) * deltaCoordinate;
 
-        if ( particle.x < 0 ) {
+    newY = particle.y +
+           GenerateRandom( minY, maxY, generator ) * deltaCoordinate;
 
-            newX = particle.x +
-                   GenerateRandom( 0, 1, generator ) * deltaCoordinate;
-
-        } else if ( particle.x > 0 ) {
-
-            newX = particle.x +
-                   GenerateRandom( -1, 0, generator ) * deltaCoordinate;
-
-        }
-
-        if ( particle.y < 0 ) {
-
-            newY = particle.y +
-                   GenerateRandom( 0, 1, generator ) * deltaCoordinate;
-
-        } else if ( particle.y > 0 ) {
-
-            newY = particle.y +
-                   GenerateRandom( -1, 0, generator ) * deltaCoordinate;
-
-        }
-
-        if ( particle.z < 0 ) {
-
-            newZ = particle.z +
-                   GenerateRandom( 0, 1, generator ) * deltaCoordinate;
-
-        } else if ( particle.z > 0 ) {
-
-            newZ = particle.z +
-                   GenerateRandom( -1, 0, generator ) * deltaCoordinate;
-
-        }
-
-    } else {
-
-        newX = particle.x +
-               GenerateRandom( -1, 1, generator ) * deltaCoordinate;
-
-        newY = particle.y +
-               GenerateRandom( -1, 1, generator ) * deltaCoordinate;
-
-        newZ = particle.z +
-               GenerateRandom( -1, 1, generator ) * deltaCoordinate;
-
-    }
+    newZ = particle.z +
+           GenerateRandom( minZ, maxZ, generator ) * deltaCoordinate;
 
     double left = 1;
 
-    double newMZ = GenerateRandom( -1, 1, generator );
+    double newMZ = GenerateRandom( -1.0, 1.0, generator );
 
     left -= newMZ * newMZ;
     double newMY = GenerateRandom( -sqrt( left ), sqrt( left ), generator );
@@ -249,14 +238,14 @@ void Simulator::MakeIterations( int particleAmount ) {
              << std::flush;
 
         for ( unsigned j = 0; j < particleAmount; j++ ) {
-            Particle temp = GenerateDeltaState( particles.at( j ), false );
+            Particle temp = GenerateDeltaState( particles.at( j ) );
 
             if ( !CheckParticleForCollisions( temp, j )) {
                 double energy =
                         CalculateParticleEnergy( temp, true ) -
                         CalculateParticleEnergy( particles.at( j ), true );
 
-                if ( exp( energy ) > GenerateRandom( 0, 1, generator )) {
+                if ( exp( energy ) > GenerateRandom( 0.0, 1.0, generator )) {
                     particles.at( j ) = temp;
                 }
 
@@ -297,43 +286,153 @@ void Simulator::MakeIterations( int particleAmount ) {
 void Simulator::MakeResizing( ) {
     cout << "\n*****************RESIZING*******************\n";
 
-    bool goOn = true;
+    cout
+            << "Target:  "
+            << tubeRadius << " x "
+            << tubeLength << endl;
 
+    bool goOn = true;
+    SetStartingTubeSize( );
+
+    int i = 0;
     //TODO: finish the resizing procedure
     while ( goOn ) {
-
-        tempRadius = tubeRadius;
-        tempLength = tubeLength;
-
+        i++;
         cout
-                << " Tube: "
-                << tubeRadius << " "
-                << tubeLength << " "
-                << " Max: "
-                << tempRadius << " "
-                << tempLength << " " << endl;
+                << "Current: "
+                << tempRadius << " x "
+                << tempLength << "\r" << flush;
 
         goOn = CheckIfTubeNeedResize( );
 
         for ( unsigned j = 0; j < particleCount; j++ ) {
-            Particle temp = GenerateDeltaState( particles.at( j ), goOn );
+            bool notJumped = true;
 
-            if ( !CheckParticleForCollisions( temp, j )) {
-                double energy =
-                        CalculateParticleEnergy( temp, true ) -
-                        CalculateParticleEnergy( particles.at( j ), true );
+            int l = 0;
 
-                if ( exp( energy ) > GenerateRandom( 0, 1, generator )) {
+            /*
+            double R = particles[j].x * particles[j].x
+                       + particles[j].y * particles[j].y;
+            cout << "\nR: " << sqrt( R ) << endl;
+            */
+
+            double minX, minY, minZ;
+            double maxX, maxY, maxZ;
+
+            if ( tempLength > 0.9 * tubeLength ) {
+
+                if ( particles[j].z > 0 ) {
+
+                    minZ = -1.0;
+                    maxZ = 0.0;
+
+                } else {
+
+                    minZ = 0.0;
+                    maxZ = 1.0;
+
+                }
+
+            } else {
+
+                minZ = -1.0;
+                maxZ = 1.0;
+
+            }
+
+            if ( tempRadius > 0.9 * tubeRadius ) {
+
+                if ( particles[j].x > 0 ) {
+
+                    minX = -1.0;
+                    maxX = 0.0;
+
+                } else {
+
+                    minX = 0.0;
+                    maxX = 1.0;
+
+                }
+
+                if ( particles[j].y > 0 ) {
+
+                    minY = -1.0;
+                    maxY = 0.0;
+
+                } else {
+
+                    minY = 0.0;
+                    maxY = 1.0;
+
+                }
+
+            } else {
+
+                minX = -1.0;
+                minY = -1.0;
+
+                maxX = 1.0;
+                maxY = 1.0;
+
+            }
+
+            while ( notJumped ){
+
+                Particle temp = GenerateDeltaState( particles.at( j ),
+                                                    minX,
+                                                    maxX,
+                                                    minY,
+                                                    maxY,
+                                                    minZ,
+                                                    maxZ );
+
+                //cout << "\ntemp:     " << temp.ToString();
+
+                if ( !CheckParticleForCollisions( temp, j )) {
                     particles.at( j ) = temp;
+                    notJumped = false;
+                    l = 0;
+                }
+                l++;
+
+                if ( l > 10 ){
+                    notJumped = false;
                 }
             }
         }
+        /*
+        for ( int k = 0; k < particleCount; k++ ) {
+            cout << "\njumped to " << particles[k].ToString() << endl;
+        }
+        cout << endl;
+        */
 
-        ResizeTubeIfPossible( );
+        bool resizeR = true;
+        bool resizeL = true;
+        if ( tempRadius < tubeRadius ) resizeR = false;
+        if ( tempLength < tubeLength ) resizeL = false;
+        ResizeTubeIfPossible( resizeR, resizeL );
+
+        /*
+        if ( i > 1000 ) {
+            goOn = false;
+        }
+         */
     }
 
-    cout << "Resize finished! Now will check if there's any errors..." << endl;
+    cout << "\nResize finished! Now will check if there's any errors..." << endl;
+    cout << "Finally: " << tempRadius << " x " << tempLength << endl;
+
     CheckSystemForErrors( );
+
+    if ( tempRadius < tubeRadius ) {
+
+        tempRadius = tubeRadius;
+    } else { cout << "ERROR AFTER RESIZING" << endl; }
+    if ( tempLength < tubeLength ) {
+
+        tempLength = tubeLength;
+    } else { cout << "ERROR AFTER RESIZING" << endl; }
 
     cout << "\n*****************RESIZING*******************\n";
 }
@@ -376,10 +475,9 @@ double Simulator::CalculateCurrentVolumeDensity( ) {
     double particleVolume =
             double(particleCount) *
             4 / 3 *
-            PI *
             pow(( particleDiameter / 2 ), 3 );
 
-    double tubeVolume = PI * tubeRadius * tubeRadius * tubeLength;
+    double tubeVolume = tempRadius * tempRadius * tempLength;
 
     return particleVolume / tubeVolume;
 }
@@ -392,16 +490,33 @@ bool Simulator::CheckParticleForCollisions(
         const Particle particle,
         int ignored ) {
 
+    //cout << "\nchecking collisions: ";
     //w walls
     double R =
             particle.x * particle.x +
             particle.y * particle.y;
 
-    if (( sqrt( R ) + particleDiameter / 2 ) > tubeRadius )
+    if (( sqrt( R ) + particleDiameter / 2 ) > tempRadius ){
+        /*
+        cout <<
+             "wall 1: " <<
+             sqrt( R ) + particleDiameter / 2 <<
+             " " << tempRadius <<
+             "\n" << std::flush;
+         */
         return true;
+    }
 
-    if ( fabs( particle.z ) + particleDiameter / 2 > tubeLength / 2 )
+    if ( fabs( particle.z ) + particleDiameter / 2 > tempLength / 2 ) {
+        /*
+        cout <<
+             "wall 2: " <<
+             fabs( particle.z ) + particleDiameter / 2 <<
+             " " << tempLength / 2 <<
+             "\n" << std::flush;
+        */
         return true;
+    }
 
     //w parts
     for ( unsigned i = 0; i < this->currentParticles; i++ ) {
@@ -416,10 +531,13 @@ bool Simulator::CheckParticleForCollisions(
                     ( particles.at( i ).z - particle.z ) *
                     ( particles.at( i ).z - particle.z );
 
-            if ( distance < particleDiameter * particleDiameter ) return true;
+            if ( distance < particleDiameter * particleDiameter ) {
+                //cout << "particle\n" << std::flush;
+                return true;
+            }
         }
     }
-
+    //cout << "none\n" << std::flush;
     return false;
 }
 
@@ -438,7 +556,7 @@ void Simulator::SetGeneratorRandomSeed( ) {
     std::chrono::steady_clock::time_point now =
             std::chrono::steady_clock::now( );
 
-    auto timePast = int( GenerateRandom( 0, 1000000000, generator ));
+    auto timePast = int( GenerateRandom( 0.0, 1000000000.0, generator ));
 
     std::this_thread::sleep_for( std::chrono::nanoseconds( timePast ));
 
@@ -450,10 +568,16 @@ void Simulator::SetGeneratorRandomSeed( ) {
                     count( ));
 
     cout << "RANDOM SEED IS: " << seed
-         << " In time: " << timePast << "nsecs."
+         << " In time: " << timePast << " nsec"
          << endl;
 
     generator.seed( seed );
+
+    cout <<  "Test sequence:" << endl;
+    for ( int i = 0; i < 10; ++i ) {
+        cout << GenerateRandom(0, 1, generator) << endl;
+    }
+    cout << endl;
 }
 
 
@@ -515,26 +639,72 @@ void Simulator::CollectTubeSizes( unsigned num ) {
 }
 
 
-void Simulator::ResizeTubeIfPossible( ) {
-    if ( tempLength < tubeLength ) tubeLength = tempLength;
-    if ( tempRadius < tubeRadius ) tubeRadius = tempRadius;
+void Simulator::ResizeTubeIfPossible( bool resizeR = true,
+                                      bool resizeL = true) {
+    double R = 0.0;
+    double L = 0.0;
+
+    for ( int i = 0; i < particleCount; i++ ) {
+        double r = particles[i].x * particles[i].x
+                   + particles[i].y * particles[i].y;
+
+        r = sqrt( r );
+
+        if ( fabs( r ) > R ) {
+
+            R = fabs( r );
+        }
+
+        if ( fabs( particles[i].z ) > L / 2 ) {
+
+            L = fabs( particles[i].z * 2 );
+        }
+    }
+
+    R += particleDiameter / 2;
+    L += particleDiameter;
+
+    //cout << "L: " << L << " R: " << R << endl;
+    if (( L < tempLength ) and resizeL ) {
+        if ( L > 0.9 * tubeLength ) {
+            /*
+            cout << "resize L to " <<
+                 L <<
+                 " from " <<
+                 tempLength << endl;
+            */
+            tempLength = L;
+        }
+    }
+
+    if (( R < tempRadius ) and resizeR ) {
+        if ( R > 0.9 * tubeRadius ) {
+            /*
+            cout << "resize R to " <<
+                 R <<
+                 " from " <<
+                 tempRadius << endl;
+            */
+            tempRadius = R;
+        }
+    }
 }
 
 
 // TODO not sure need resize checker works correct
 bool Simulator::CheckIfTubeNeedResize( ) {
     double R = tempRadius;
-    double A = aspect;
+    double L = tempLength;
 
-    return !(( R > tubeRadius ) && ( R * A > tubeLength ));
+    return (( R > tubeRadius ) || ( L > tubeLength ));
 }
 
 void Simulator::GenerateTube(
         unsigned int particleCount,
         double particleDiameter,
         double targetVolumeDensity,
-        double &targetTubeR,
-        double &targetTubeL,
+        double &tubeRadius,
+        double &tubeLength,
         double aspect ) {
 
     cout << "\n*************************************************************\n";
@@ -551,16 +721,40 @@ void Simulator::GenerateTube(
     double tubeVolume = allParticlesVolume / targetVolumeDensity;
 
     // V = pi r^2 * L = pi r^3 * aspect
-    targetTubeR = pow( tubeVolume / PI / aspect, 0.3333333 );
+    tubeRadius = pow( tubeVolume / PI / aspect, 0.3333333 );
 
-    if ( targetTubeR < particleDiameter ) {
-        targetTubeR = 0.55 * particleDiameter;
+    if ( tubeRadius < particleDiameter ) {
+        tubeRadius = 0.55 * particleDiameter;
     }
 
-    targetTubeL = targetTubeR * aspect;
+    tubeLength = tubeRadius * aspect;
 
     cout    << "New generated tube: "
-            << "R = " << targetTubeR
-            << " and L = " << targetTubeL
+            << "R = " << tubeRadius
+            << " and L = " << tubeLength
+            << "\n"
             << endl;
+}
+
+void Simulator::SetStartingTubeSize( ) {
+
+    double L = 0;
+    double R = 0;
+
+    for ( int i = 0; i < particleCount; i++ ) {
+
+        double l = 2 * fabs(particles[i].z) + particleDiameter;
+
+        double r = particles[i].x * particles[i].x +
+                   particles[i].y * particles[i].y;
+
+        r = sqrt( r ) + particleDiameter / 2;
+
+        if ( l > L ) L = l;
+        if ( r > R ) R = r;
+    }
+
+    tempRadius = R;
+    tempLength = L;
+
 }
