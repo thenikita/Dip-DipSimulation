@@ -74,9 +74,9 @@ void Simulator::Run( ) {
 
     ShowSystem();
 
-    //MakeIterations(particleCount);
+    MakeIterations( this->particleCount );
 
-    //ShowSystem();
+    ShowSystem();
 }
 
 
@@ -96,17 +96,20 @@ void Simulator::ShowSystem( ) {
             "            MAGNETIC MOMENT       "
          << endl;
 
+    /*
     for ( unsigned i = 0; i < particleCount; i++ ) {
         cout << "  " << i << "    ";
         cout << particles.at( i ).ToString( ) << endl;
     }
+     */
+    CheckSystemForErrors();
     cout << "\n################# SYSTEM ###################\n";
 }
 
 void Simulator::GenerateParticles( const int particleCount ) {
     // increasing tube size to generate particles in it
     tempRadius = tubeRadius * multiplier;
-    tempLength = tubeLength * multiplier;
+    tempLength = tubeLength;
 
     double R = tempRadius;
     double L = tempLength;
@@ -123,21 +126,24 @@ void Simulator::GenerateParticles( const int particleCount ) {
     for ( unsigned i = 0; i < particleCount; i++ ) {
         double x, y, z;
 
-        x = GenerateRandom( -R + d/2,
-                            R - d/2,
+        //cout << "range: " << -R + d / 2 << flush;
+        x = GenerateRandom( -R + d / 2,
+                            R - d / 2,
                             generator );
 
-        R = sqrt( R * R - x * x );
-        y = GenerateRandom( -R + d/2,
-                            R - d/2,
+        double r = sqrt( R * R - x * x );
+        //cout << " " << -r + d / 2 << flush;
+        y = GenerateRandom( -r + d / 2,
+                            r - d / 2,
                             generator );
 
-        z = GenerateRandom( -L / 2.0 + d/2,
-                            L / 2.0 - d/2,
+        //cout << " " << -(L - d)/2 << endl;
+        z = GenerateRandom( -( L - d ) / 2.0,
+                            ( L - d ) / 2.0,
                             generator );
 
 
-        cout << x << " " << y << " " << z << endl;
+        //cout << x << " " << y << " " << z << endl;
         Particle temp( x, y, z, 1, 0, 0 );
         if ( !CheckParticleForCollisions( temp, -1 )) {
             this->currentParticles++;
@@ -294,10 +300,9 @@ void Simulator::MakeResizing( ) {
     bool goOn = true;
     SetStartingTubeSize( );
 
-    int i = 0;
-    //TODO: finish the resizing procedure
+    int stuckCounter = 0;
+
     while ( goOn ) {
-        i++;
         cout
                 << "Current: "
                 << tempRadius << " x "
@@ -319,60 +324,63 @@ void Simulator::MakeResizing( ) {
             double minX, minY, minZ;
             double maxX, maxY, maxZ;
 
-            if ( tempLength > 0.9 * tubeLength ) {
+            double step = tempLength / particleCount / 10;
+
+            if ( tempLength > tubeLength ) {
 
                 if ( particles[j].z > 0 ) {
 
-                    minZ = -1.0;
-                    maxZ = 0.0;
+                    minZ = -1.0 * step;
+                    maxZ = 0.0 * step;
 
                 } else {
 
-                    minZ = 0.0;
-                    maxZ = 1.0;
+                    minZ = 0.0 * step;
+                    maxZ = 1.0 * step;
 
                 }
 
             } else {
-
-                minZ = -1.0;
-                maxZ = 1.0;
+                minZ = -1.0 * step;
+                maxZ = 1.0 * step;
 
             }
 
-            if ( tempRadius > 0.9 * tubeRadius ) {
+            step = tempRadius / particleCount;
+
+            if ( tempRadius > tubeRadius ) {
 
                 if ( particles[j].x > 0 ) {
 
-                    minX = -1.0;
-                    maxX = 0.0;
+                    minX = -1.0 * step;
+                    maxX = 0.0 * step;
 
                 } else {
 
-                    minX = 0.0;
-                    maxX = 1.0;
+                    minX = 0.0 * step;
+                    maxX = 1.0 * step;
 
                 }
 
                 if ( particles[j].y > 0 ) {
 
-                    minY = -1.0;
-                    maxY = 0.0;
+                    minY = -1.0 * step;
+                    maxY = 0.0 * step;
 
                 } else {
 
-                    minY = 0.0;
-                    maxY = 1.0;
+                    minY = 0.0 * step;
+                    maxY = 1.0 * step;
 
                 }
 
             } else {
 
-                minX = -1.0;
-                minY = -1.0;
+                minX = -1.0 * step;
+                minY = -1.0 * step;
 
-                maxX = 1.0;
-                maxY = 1.0;
+                maxX = 1.0 * step;
+                maxY = 1.0 * step;
 
             }
 
@@ -409,15 +417,10 @@ void Simulator::MakeResizing( ) {
 
         bool resizeR = true;
         bool resizeL = true;
-        if ( tempRadius < tubeRadius ) resizeR = false;
-        if ( tempLength < tubeLength ) resizeL = false;
+        if ( tempRadius <= tubeRadius ) resizeR = false;
+        if ( tempLength <= tubeLength ) resizeL = false;
         ResizeTubeIfPossible( resizeR, resizeL );
 
-        /*
-        if ( i > 1000 ) {
-            goOn = false;
-        }
-         */
     }
 
     cout << "\nResize finished! Now will check if there's any errors..." << endl;
@@ -572,12 +575,6 @@ void Simulator::SetGeneratorRandomSeed( ) {
          << endl;
 
     generator.seed( seed );
-
-    cout <<  "Test sequence:" << endl;
-    for ( int i = 0; i < 10; ++i ) {
-        cout << GenerateRandom(0, 1, generator) << endl;
-    }
-    cout << endl;
 }
 
 

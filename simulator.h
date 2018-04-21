@@ -15,11 +15,11 @@ private:
     std::vector<Particle> particles;
     std::vector<double> field;
 
-    double multiplier = 1000;
+    double multiplier = 2;
     std::mt19937_64 generator;
     double deltaCoordinate = 0.1;
 
-    unsigned int stepsAmount = 10;
+    unsigned int stepsAmount = 1000;
 
     double particleDiameter;
     unsigned int particleCount;
