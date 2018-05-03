@@ -6,6 +6,7 @@
 #custom unincluded below
 *.vcxproj
 *.vcxproj.filters
+*.txt
 
 # User-specific files
 *.suo
