@@ -25,10 +25,8 @@ public:
             Particle first,
             Particle second );
 
-    static double CalculateInFieldEnergy(
-            double field,
-            std::vector<double> first,
-            std::vector<double> second );
+    static double CalculateInFieldEnergy(std::vector<double> magneticMoment,
+                                         std::vector<double> fieldVector );
 
     static double ProductScalars(
             std::vector<double> first,

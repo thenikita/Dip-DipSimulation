@@ -32,11 +32,9 @@ double Particle::CalculateDipoleInteractionEnergy(
         Particle first,
         Particle second ) {
 
-    double d = diameter;
-
     double moduleR = sqrt( pow( first.x - second.x, 2 )
                            + pow( first.y - second.y, 2 )
-                           + pow( first.z = second.z, 2 ));
+                           + pow( first.z - second.z, 2 ));
 
     vector<double> r, e1, e2;
     r.push_back( first.x - second.x );
@@ -55,21 +53,27 @@ double Particle::CalculateDipoleInteractionEnergy(
     double e2r = ProductScalars( e2, r );
     double e1e2 = ProductScalars( e1, e2 );
 
-    return -lambda / ( pow( moduleR / d, 3 )) *
-           ( 3 * e1r * e2r / pow( moduleR / d, 2 ) - e1e2 );
+    return lambda / ( pow( moduleR / diameter, 3 )) *
+           ( 3 * e1r * e2r / pow( moduleR / diameter, 2 ) - e1e2 );
 }
 
 double Particle::CalculateInFieldEnergy(
-        double field,
-        std::vector<double> first,
-        std::vector<double> second ) {
+        std::vector<double> magneticMoment,
+        std::vector<double> fieldVector ) {
+
+    double field = 0;
+    for ( unsigned i = 0; i < 3; i++ ) {
+
+        field += fieldVector.at( i ) * fieldVector.at( i );
+    }
+    field = sqrt( field );
 
     double cos =
-            ProductScalars( first, second ) /
-            CalculateVectorModule( first ) /
-            CalculateVectorModule( second );
+            ProductScalars( magneticMoment, fieldVector ) /
+            CalculateVectorModule( magneticMoment ) /
+            CalculateVectorModule( fieldVector );
 
-    return -field * cos;
+    return field * cos;
 }
 
 /*Calculate Projection function returns projection of the second
@@ -120,7 +124,6 @@ bool Particle::CheckForErrors( double R, double L ) {
 
 double Particle::ProductScalars( vector<double> first, vector<double> second ) {
 
-    //cout << "scalar: " << first.at(0) << first.at(1) << first.at(2) << endl;
     return first.at( 0 ) * second.at( 0 )
            + first.at( 1 ) * second.at( 1 )
            + first.at( 2 ) * second.at( 2 );

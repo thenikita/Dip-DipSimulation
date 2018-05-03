@@ -17,22 +17,20 @@ double Theory::CalculateMagnetizationForSystem(
         double lambda,
         double field,
         double magneticMoment,
-        double volumeDensity) {
+        double particleDensity) {
 
     double M =
             CalculateMagnetizationForSingleParticle( field )
             * magneticMoment
-            * volumeDensity;
+            * particleDensity;
 
-    double H = field /
-               CalculateFieldMultiplier(
-                       lambda,
-                       volumeDensity,
-                       magneticMoment );
+    double newM = M / 3 * CalculateFieldMultiplier(lambda,
+                                               particleDensity,
+                                               magneticMoment);
 
-    double effectiveM = H + M / 3;
+    double effectiveM = field + newM;
 
     return magneticMoment *
-           volumeDensity *
+           particleDensity *
            CalculateMagnetizationForSingleParticle( effectiveM );
 }

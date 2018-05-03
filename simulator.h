@@ -4,12 +4,16 @@
 #include <random>
 #include <ctime>
 #include <chrono>
+#include <string>
 
 #include "particle.h"
 
 class Simulator {
 
 public:
+    const std::string CONSTANT = "const";
+    const std::string LINEAR = "linear";
+    const std::string CENTRAL = "central";
 
 private:
     std::vector<Particle> particles;
@@ -19,7 +23,7 @@ private:
     std::mt19937_64 generator;
     double deltaCoordinate = 0.1;
 
-    unsigned int stepsAmount = 1000;
+    unsigned int stepsAmount = 10000;
 
     double particleDiameter;
     unsigned int particleCount;
@@ -27,11 +31,17 @@ private:
     double lambda;
     double fieldModule;
     double targetVolumeDensity;
-    double particleMagneticMoment;
+    double particleMagneticMoment = 1;
     double aspect;
 
     double tubeRadius, tubeLength;
     double tempRadius, tempLength;
+
+    time_t timeAtStart;
+
+    double singleTheoryMagnetization;
+    double systemTheoryMagnetization;
+    double currentMagnetization;
 
 public:
     Simulator(
@@ -83,7 +93,8 @@ private:
                                  double minZ = -1.0,
                                  double maxZ = 1.0 );
 
-    double CalculateParticleEnergy( Particle particle, bool mode );
+    double CalculateParticleEnergy( Particle particle,
+                                    std::string mode = "const" );
 
     double CalculateCurrentVolumeDensity( );
 
@@ -98,17 +109,23 @@ private:
 
     std::vector<double> GetVectorField(
             std::vector<double> point,
-            bool mode );
+            std::string mode = "const" );
 
     bool CheckSystemForErrors( );
 
     void CollectTubeSizes( unsigned num );
 
-    void ResizeTubeIfPossible( bool resizeR,
-                               bool resizeL );
+    bool ResizeTubeIfPossible( bool resizeR,
+                               bool resizeL);
 
     bool CheckIfTubeNeedResize( );
 
     void SetStartingTubeSize( );
+
+    void ShowTimeSpent( time_t currentTime );
+
+    void SetStartingTime( );
+
+    void HelpMakeResizing( );
 
 };

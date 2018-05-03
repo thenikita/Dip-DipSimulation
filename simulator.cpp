@@ -27,6 +27,10 @@ Simulator::Simulator(
 
     cout << "Simulator is launched!" << endl;
 
+    SetStartingTime();
+
+    this->timeAtStart = std::time( nullptr );
+
     this->particleDiameter = *particleDiameter;
     this->particleCount = *particleCount;
     this->lambda = *lambda;
@@ -51,6 +55,7 @@ Simulator::Simulator(
                                                                      << endl;
 
     cout << "Field module: " << fieldModule << endl;
+    ShowTimeSpent( std::time( nullptr ) );
     cout << "\n*************************************************************\n";
 }
 
@@ -70,7 +75,7 @@ void Simulator::Run( ) {
 
     ShowSystem();
 
-    MakeResizing();
+    MakeResizing( );
 
     ShowSystem();
 
@@ -82,31 +87,39 @@ void Simulator::Run( ) {
 
 void Simulator::ShowSystem( ) {
     cout << "\n################# SYSTEM ###################\n";
-    cout << "Lambda:           " << this->lambda << endl;
-    cout << "Field Module:     " << this->fieldModule << endl;
-    cout << "Target Density:   " << this->targetVolumeDensity << endl;
-    cout << "Current Density:  " << CalculateCurrentVolumeDensity( ) << endl;
+    cout << "Lambda:               " << this->lambda << endl;
+    cout << "Field Module:         " << this->fieldModule << endl;
+    cout << "Target Density:       " << this->targetVolumeDensity << endl;
+    cout << "Current Density:      " << CalculateCurrentVolumeDensity( ) << endl;
 
-    cout << "Current Length:   " << this->tempLength << endl;
-    cout << "Current Radius:   " << this->tempRadius << endl;
+    cout << "Current Length:       " << this->tempLength << endl;
+    cout << "Current Radius:       " << this->tempRadius << endl;
 
-    cout << "Particles:        " << particleCount << endl;
+    cout << "Particles:            " << particleCount << endl;
+    /*
     cout << "  N  |"
             "            COORDINATES             |"
             "            MAGNETIC MOMENT       "
          << endl;
 
-    /*
+
     for ( unsigned i = 0; i < particleCount; i++ ) {
         cout << "  " << i << "    ";
         cout << particles.at( i ).ToString( ) << endl;
     }
      */
+    double tubeVolume = PI * pow( tempRadius, 2 ) * tempLength;
+    cout << "Theory for isolated:  "
+         << this->particleCount *
+            Theory::CalculateMagnetizationForSingleParticle( fieldModule ) /
+            tubeVolume
+         << endl;
     CheckSystemForErrors();
     cout << "\n################# SYSTEM ###################\n";
 }
 
 void Simulator::GenerateParticles( const int particleCount ) {
+    SetStartingTime();
     // increasing tube size to generate particles in it
     tempRadius = tubeRadius * multiplier;
     tempLength = tubeLength;
@@ -149,11 +162,13 @@ void Simulator::GenerateParticles( const int particleCount ) {
             this->currentParticles++;
             particles.push_back( temp );
 
+            /*
             cout
                  << "Particles ready: "
                  << i + 1 << " in " << tries
                  << particles[i].ToString()
                  << "\n" << std::flush;
+            */
 
             tries = 1;
 
@@ -171,6 +186,7 @@ void Simulator::GenerateParticles( const int particleCount ) {
     }
 
     cout << "\nParticles've been generated!" << endl;
+    ShowTimeSpent( time( nullptr ) );
 }
 
 
@@ -206,7 +222,7 @@ Particle Simulator::GenerateDeltaState(
            GenerateRandom( minZ, maxZ, generator ) * deltaCoordinate;
 
     double left = 1;
-
+    /*
     double newMZ = GenerateRandom( -1.0, 1.0, generator );
 
     left -= newMZ * newMZ;
@@ -215,6 +231,16 @@ Particle Simulator::GenerateDeltaState(
     left -= newMY * newMY;
     //TODO: check whether we need +- x generation
     double newMX = sqrt( left );
+     */
+
+    double angleToZ = GenerateRandom(-M_PI, M_PI, generator);
+    double angleToX = GenerateRandom(-M_PI, M_PI, generator);
+
+    double newMZ = cos(angleToZ) * particleMagneticMoment;
+    left -= newMZ * newMZ;
+    left = sqrt(left);
+    double newMX = left * cos(angleToX);
+    double newMY = left * sin(angleToX);
 
     auto *newState = new Particle(
             newX,
@@ -223,6 +249,9 @@ Particle Simulator::GenerateDeltaState(
             newMX,
             newMY,
             newMZ);
+
+    //delete newMX, newMY, newMZ;
+    //delete newX, newY, newZ;
 
     return *newState;
 }
@@ -235,53 +264,71 @@ Particle Simulator::GenerateDeltaState(
 //TODO: add deltaCoordinate decreasing in future iterations to immprove speed
 void Simulator::MakeIterations( int particleAmount ) {
     cout << "\n****************ITERATIONS******************\n";
+    SetStartingTime();
 
-    double averageProjection = 0;
+    double overallProjection = 0;
 
     //check it
     for ( unsigned i = 0; i < stepsAmount; i++ ) {
-        cout << 100 * i / stepsAmount << " %  Tube: " << tubeRadius << " " << tubeLength << "   \r"
-             << std::flush;
+
+        if ( i % ( stepsAmount / 1000 ) == 0 ) {
+            cout << 100 * i / stepsAmount << " %  time: " <<
+                 static_cast<int>( time( nullptr ) - this->timeAtStart ) <<
+                 "   \r" << std::flush;
+
+        }
 
         for ( unsigned j = 0; j < particleAmount; j++ ) {
             Particle temp = GenerateDeltaState( particles.at( j ) );
 
             if ( !CheckParticleForCollisions( temp, j )) {
                 double energy =
-                        CalculateParticleEnergy( temp, true ) -
-                        CalculateParticleEnergy( particles.at( j ), true );
+                        CalculateParticleEnergy( temp, CONSTANT ) -
+                        CalculateParticleEnergy( particles.at( j ), CONSTANT );
 
                 if ( exp( energy ) > GenerateRandom( 0.0, 1.0, generator )) {
                     particles.at( j ) = temp;
                 }
+            }
 
-                averageProjection += particles.at( j ).mz;
+            if ( i > stepsAmount / 10 ) {
+                overallProjection += particles.at( j ).mz;
             }
         }
     }
 
+    double tubeVolume = PI * pow( tubeRadius, 2 ) * tubeLength;
+    double particleDensity = particleAmount / tubeVolume;
     cout
-            << "100 %  Tube: " << tubeRadius << " "
-            << tubeLength << "   \r"
+            << "100 %  time: " <<
+            static_cast<int>( time( nullptr ) - this->timeAtStart ) <<
+            "   \r"
 
             << "\nIterations've finished!" << endl
 
-            << "Average is:           "
-            << averageProjection / stepsAmount / particleAmount
+            << "Practical is:         "
+            << particleMagneticMoment *
+               overallProjection /
+               stepsAmount /
+               tubeVolume
             << endl
 
             << "Theory for isolated:  "
-            << Theory::CalculateMagnetizationForSingleParticle( fieldModule )
+            << particleMagneticMoment *
+               particleDensity *
+               Theory::CalculateMagnetizationForSingleParticle( fieldModule )
             << endl
 
             << "Theory for system:    "
             << Theory::CalculateMagnetizationForSystem( lambda,
                                                         fieldModule,
                                                         particleMagneticMoment,
-                                                        targetVolumeDensity )
+                                                        particleDensity )
             << endl;
 
     CheckSystemForErrors( );
+
+    ShowTimeSpent( time( nullptr ) );
 
     cout << "****************ITERATIONS******************\n";
 }
@@ -291,6 +338,7 @@ void Simulator::MakeIterations( int particleAmount ) {
    volume density be equal to target*/
 void Simulator::MakeResizing( ) {
     cout << "\n*****************RESIZING*******************\n";
+    SetStartingTime();
 
     cout
             << "Target:  "
@@ -306,7 +354,8 @@ void Simulator::MakeResizing( ) {
         cout
                 << "Current: "
                 << tempRadius << " x "
-                << tempLength << "\r" << flush;
+                << tempLength << " stuck: "
+                << stuckCounter << "\r" << flush;
 
         goOn = CheckIfTubeNeedResize( );
 
@@ -419,8 +468,14 @@ void Simulator::MakeResizing( ) {
         bool resizeL = true;
         if ( tempRadius <= tubeRadius ) resizeR = false;
         if ( tempLength <= tubeLength ) resizeL = false;
-        ResizeTubeIfPossible( resizeR, resizeL );
+        bool resized = ResizeTubeIfPossible( resizeR, resizeL );
 
+        if (!resized) stuckCounter++;
+
+        if ( stuckCounter > 1000 ) {
+            HelpMakeResizing( );
+            stuckCounter = 0;
+        }
     }
 
     cout << "\nResize finished! Now will check if there's any errors..." << endl;
@@ -437,7 +492,38 @@ void Simulator::MakeResizing( ) {
         tempLength = tubeLength;
     } else { cout << "ERROR AFTER RESIZING" << endl; }
 
+    ShowTimeSpent( time( nullptr ) );
+
     cout << "\n*****************RESIZING*******************\n";
+}
+
+
+void Simulator::HelpMakeResizing( ) {
+    cout << "\nhelping... " << flush;
+
+    this->tempRadius = 1.05 * tempRadius;
+
+    for ( int i = 0; i < 1000; ++i ) {
+
+        for ( unsigned j = 0; j < particleCount; j++ ) {
+            Particle temp = GenerateDeltaState( particles.at( j ) );
+
+            if ( !CheckParticleForCollisions( temp, j )) {
+                double energy =
+                        CalculateParticleEnergy( temp ) -
+                        CalculateParticleEnergy( particles.at( j ) );
+
+                if ( exp( energy ) > GenerateRandom( 0.0, 1.0, generator )) {
+                    particles.at( j ) = temp;
+                }
+
+            }
+        }
+
+    }
+
+    cout << "helped" << endl;
+
 }
 
 
@@ -445,7 +531,7 @@ void Simulator::MakeResizing( ) {
    inside the outer magnetic fieldModule and in dipole-dipole interaction */
 double Simulator::CalculateParticleEnergy(
         const Particle particle,
-        bool mode ) {
+        std::string mode ) {
 
     //here's the fieldModule part of energy
     std::vector<double> point;
@@ -463,11 +549,23 @@ double Simulator::CalculateParticleEnergy(
     double outerFieldEnergy =
             Particle::CalculateProjection( moment, outerField );
 
-    double dipoleInteractionEnergy = 0;
-
-
     //TODO: calculate dipole interaction energy
     //Already have dip-dip function in particle obj
+    double dipoleInteractionEnergy = 0;
+
+    /*
+    for ( unsigned i = 0; i < particleCount; i++ ) {
+
+        if ( particles.at( i ).x != particle.x ) {
+
+            dipoleInteractionEnergy +=
+                Particle::CalculateDipoleInteractionEnergy( lambda,
+                                                            particleDiameter,
+                                                            particles.at( i ),
+                                                            particle );
+        }
+    }
+     */
 
     double totalEnergy = dipoleInteractionEnergy + outerFieldEnergy;
 
@@ -554,6 +652,8 @@ double Simulator::GenerateRandom( double min, double max, mt19937_64 &generator 
 
 /* Set Random Seed function sets seed for random generator */
 void Simulator::SetGeneratorRandomSeed( ) {
+    SetStartingTime( );
+
     generator.seed( 1 );
 
     std::chrono::steady_clock::time_point now =
@@ -570,22 +670,25 @@ void Simulator::SetGeneratorRandomSeed( ) {
             std::chrono::duration_cast<std::chrono::nanoseconds>( then - now ).
                     count( ));
 
-    cout << "RANDOM SEED IS: " << seed
-         << " In time: " << timePast << " nsec"
-         << endl;
+    cout << "RANDOM SEED IS: " << seed << endl;
 
     generator.seed( seed );
+
+    ShowTimeSpent( std::time( nullptr ) );
 }
 
 
 /* Get Vector Field function returns outer fieldModule vector in two
    modes: normal and radial */
-std::vector<double> Simulator::GetVectorField( std::vector<double> point, bool mode ) {
-    // true = normal to z oriented fieldModule
-    // false = center oriented fieldModule
-    if ( mode ) {
+std::vector<double> Simulator::GetVectorField( std::vector<double> point,
+                                               std::string mode ) {
+
+    if ( mode == CONSTANT ) {
+
         return field;
-    } else {
+
+    } else if ( mode == "central" ) {
+
         std::vector<double> temp;
         temp.push_back( -point.at( 0 ));
         temp.push_back( -point.at( 1 ));
@@ -636,8 +739,10 @@ void Simulator::CollectTubeSizes( unsigned num ) {
 }
 
 
-void Simulator::ResizeTubeIfPossible( bool resizeR = true,
+bool Simulator::ResizeTubeIfPossible( bool resizeR = true,
                                       bool resizeL = true) {
+    bool resized = false;
+
     double R = 0.0;
     double L = 0.0;
 
@@ -661,7 +766,6 @@ void Simulator::ResizeTubeIfPossible( bool resizeR = true,
     R += particleDiameter / 2;
     L += particleDiameter;
 
-    //cout << "L: " << L << " R: " << R << endl;
     if (( L < tempLength ) and resizeL ) {
         if ( L > 0.9 * tubeLength ) {
             /*
@@ -671,6 +775,7 @@ void Simulator::ResizeTubeIfPossible( bool resizeR = true,
                  tempLength << endl;
             */
             tempLength = L;
+            resized = true;
         }
     }
 
@@ -683,8 +788,11 @@ void Simulator::ResizeTubeIfPossible( bool resizeR = true,
                  tempRadius << endl;
             */
             tempRadius = R;
+            resized = true;
         }
     }
+
+    return resized;
 }
 
 
@@ -722,6 +830,8 @@ void Simulator::GenerateTube(
 
     if ( tubeRadius < particleDiameter ) {
         tubeRadius = 0.55 * particleDiameter;
+
+        aspect = allParticlesVolume / ( targetVolumeDensity * PI * pow( tubeRadius, 3 ) );
     }
 
     tubeLength = tubeRadius * aspect;
@@ -753,5 +863,25 @@ void Simulator::SetStartingTubeSize( ) {
 
     tempRadius = R;
     tempLength = L;
+
+}
+
+void Simulator::ShowTimeSpent( time_t currentTime ) {
+
+    auto spentTimeSec = static_cast<int>( currentTime - this->timeAtStart );
+
+    int spentTimeMin = spentTimeSec / 60;
+
+    spentTimeSec = spentTimeSec - 60 * spentTimeMin;
+
+    cout << "[ TIME SPENT: " <<
+         spentTimeMin << "m " <<
+         spentTimeSec << "s ]" << endl;
+
+}
+
+void Simulator::SetStartingTime( ) {
+
+    this->timeAtStart = std::time( nullptr );
 
 }

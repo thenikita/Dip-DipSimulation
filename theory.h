@@ -13,5 +13,5 @@ public:
             double lambda,
             double field,
             double magneticMoment,
-            double volumeDensity );
+            double particleDensity );
 };
