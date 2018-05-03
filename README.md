@@ -5,12 +5,7 @@
   you will have an opportunity to set everything you need up. 
   
 ## Success
-**Current status:**
-- [X] Working with N particles in constant volume tube with no demagnetisation
-
-**Aiming to:**
-- [ ] Resizing tube to get target volume density
-  
 **Things done:**
 - [X] Basic shit
 - [X] Everything looks working for one particle
+- [X] Resizing the tube for any amount of particles
